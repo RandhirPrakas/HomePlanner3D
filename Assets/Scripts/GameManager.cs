@@ -55,7 +55,18 @@ public class GameManager : MonoBehaviour
 
         if(Input.GetKeyDown(KeyCode.Space))
         {
-            _subStateManager.SetSubState(new DrawRoomState());
+            if(_subStateManager.GetCurrentSubState()?.GetType() == typeof(DrawRoomState))
+            {
+                _subStateManager.SetSubState(new EditRoomPointsState());
+            }
+            else if(_subStateManager.GetCurrentSubState()?.GetType() == typeof(EditRoomPointsState))
+            {
+                _subStateManager.SetSubState(new DrawRoomState());
+            }
+        }
+        else if(Input.GetKeyDown(KeyCode.KeypadEnter))
+        {
+            GenerateWalls();
         }
     }
 
@@ -74,5 +85,24 @@ public class GameManager : MonoBehaviour
 
         /*_cameraStateManager = new CameraStateManager();
         _subStateManager = new SubStateManager();*/
+    }
+
+    // just for testing 
+    private ProceduarlwallGenerator _wallGenerator;
+    private void GenerateWalls()
+    {
+        if(_wallGenerator == null)
+        {
+            _wallGenerator = new ProceduarlwallGenerator();
+        }
+
+        foreach(Room room in RoomManager.Instance._allRooms)
+        {
+            for(int i=0;i<room._allRoomWalls.Count;i++)
+            {
+                Wall wall = room._allRoomWalls[i];
+                _wallGenerator.MapAllRequiredPoints(wall.GetStartPosition(), wall.GetEndPosition(),wall.gameObject.transform);
+            }
+        }
     }
 }

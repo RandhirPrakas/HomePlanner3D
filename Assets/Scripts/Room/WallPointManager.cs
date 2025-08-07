@@ -1,7 +1,5 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using static UnityEditor.PlayerSettings;
 
 public class WallPointManager : MonoBehaviour
 {
@@ -31,12 +29,12 @@ public class WallPointManager : MonoBehaviour
             
         }
 
-        WallPoint wallPoint = new GameObject(string.IsNullOrEmpty(name)?"WallPoint":name).AddComponent<WallPoint>();
-        wallPoint.transform.position = position;
-        wallPoint._position = position;
+        GameObject pointGO = new GameObject(string.IsNullOrEmpty(name) ? "WallPoint" : name);
+        WallPoint wallPoint = pointGO.AddComponent<WallPoint>();
+        wallPoint.Initialize(position);
         _allWallPoints.Add(wallPoint);
-        return wallPoint;
 
+        return wallPoint;
     }
 
     

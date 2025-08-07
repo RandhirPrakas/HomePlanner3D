@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
 public class Wall : MonoBehaviour
 {
@@ -12,17 +11,21 @@ public class Wall : MonoBehaviour
 
     [SerializeField] private float _wallLength;
 
+    [SerializeField] private GameObject _canvasGO;
+    [SerializeField] private Room _parentRoom;
+
     private LineRenderer _lineRenderer;
     private TMP_Text _labelText;
     private RectTransform _labelRect;
 
-    public void SetStartAndEndPosition(WallPoint startPosition, WallPoint endPosition)
+    public void SetStartAndEndPosition(WallPoint startPosition, WallPoint endPosition, Room room)
     {
         this._startPosition = startPosition;
         this._endPosition = endPosition;
+        this._parentRoom = room;
 
         InitLineRenderer();
-        //InitLabel();
+        InitLabel();
         UpdateFromPoints();
     }
 
@@ -37,33 +40,40 @@ public class Wall : MonoBehaviour
         _lineRenderer.positionCount = 2;
         _lineRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         _lineRenderer.material = Resources.Load<Material>("ProceduralMaterials/QuadMaterial 1");
+        _lineRenderer.startWidth = AppHelper._lrThickness;
+        _lineRenderer.endWidth = AppHelper._lrThickness;
         _lineRenderer.SetPosition(0, _startPosition._position);
         _lineRenderer.SetPosition(1, _endPosition._position);
     }
-
     private void InitLabel()
     {
         if (_labelText != null)
             return;
 
-        GameObject canvasGO = GameObject.Find("WallLabelsCanvas");
-        if (canvasGO == null)
+        if (_canvasGO == null)
         {
-            Debug.LogWarning("WallLabelsCanvas not found in scene!");
+            _canvasGO = GameObject.Find("WallLabelsCanvas");
+            if (_canvasGO == null)
+            {
+                Debug.LogWarning("WallLabelsCanvas not found in scene!");
+                return;
+            }
+        }
+
+        // Load prefab containing the label with left/right arrows and TMP
+        GameObject labelPrefab = Resources.Load<GameObject>("Prefabs/WallLabelPrefab");
+        labelPrefab.transform.localRotation = Quaternion.Euler(0f, 0f, 0f);
+        if (labelPrefab == null)
+        {
+            Debug.LogError("WallLabelPrefab not found in Resources.");
             return;
         }
 
-        // Create new label under shared canvas
-        GameObject labelGO = new GameObject("WallLengthLabel", typeof(RectTransform));
-        labelGO.transform.SetParent(canvasGO.transform, false);
-
-        _labelText = labelGO.AddComponent<TextMeshProUGUI>();
-        _labelText.fontSize = 14;
-        _labelText.color = Color.black;
-
-        _labelRect = _labelText.GetComponent<RectTransform>();
-        _labelRect.sizeDelta = new Vector2(50, 30);
+        GameObject labelGO = Instantiate(labelPrefab, _canvasGO.transform);
+        _labelText = labelGO.GetComponentInChildren<TMP_Text>();
+        _labelRect = labelGO.GetComponent<RectTransform>();
     }
+
 
     public void UpdateFromPoints()
     {
@@ -71,13 +81,15 @@ public class Wall : MonoBehaviour
             return;
 
         Vector3 start = _startPosition._position;
-        Vector3 end = _endPosition._position + Vector3.up * 10;
+        Vector3 end = _endPosition._position;
 
         _lineRenderer.SetPosition(0, start);
         _lineRenderer.SetPosition(1, end);
 
         _wallLength = Vector3.Distance(start, end);
         UpdateLabel(start, end);
+
+        _parentRoom?.UpdateFloorOnEditingPoints();
     }
 
     private void UpdateLabel(Vector3 start, Vector3 end)
@@ -86,11 +98,37 @@ public class Wall : MonoBehaviour
             return;
 
         Vector3 center = (start + end) / 2f;
+        Vector3 direction = (end - start).normalized;
+
+        // Set position
         _labelRect.position = center + Vector3.up * 0.1f;
 
-        _labelText.text = _wallLength.ToString("F2") + "m";
+        // Set rotation
+        float angle = Mathf.Atan2(direction.z, direction.x) * Mathf.Rad2Deg;
 
-        // Optionally face the camera
-        _labelRect.forward = Camera.main.transform.forward;
+        if (angle > 90 || angle < -90)
+            angle += 180;
+
+        _labelRect.rotation = Quaternion.Euler(90f, 0f, -angle); 
+
+        // Not working
+        // SetSize (So World Space matchses with wall length) 
+        float height = 0.3f; // fixed height in world units
+        _labelRect.sizeDelta = new Vector2(_wallLength, height);
+
+        // Set text
+        _labelText.text = _wallLength.ToString("F2") + " ft";
+    }
+
+    public Vector3 GetStartPosition()
+    {
+        Vector3 pos = new Vector3(_startPosition._position.x, 0, _startPosition._position.z);
+        return pos;
+    }
+
+    public Vector3 GetEndPosition()
+    {
+        Vector3 pos = new Vector3(_endPosition._position.x, 0, _endPosition._position.z);
+        return pos;
     }
 }

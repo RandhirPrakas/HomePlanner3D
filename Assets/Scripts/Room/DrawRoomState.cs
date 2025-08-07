@@ -1,7 +1,4 @@
-using TMPro.EditorUtilities;
-using UnityEditorInternal;
 using UnityEngine;
-using UnityEngine.UI;
 
 public class DrawRoomState : ICameraSubState
 {
@@ -20,6 +17,7 @@ public class DrawRoomState : ICameraSubState
         // Create new Room GameObject
         GameObject roomGO = new GameObject("Room");
         _currentRoom = roomGO.AddComponent<Room>();
+        RoomManager.Instance._allRooms.Add(_currentRoom);
 
         _currentRoom.SpawnWallLabelCanvas();
 
@@ -27,6 +25,8 @@ public class DrawRoomState : ICameraSubState
         _wallOutline.positionCount = 0;
         _wallOutline.material = Resources.Load<Material>("ProceduralMaterials/QuadMaterial 1");
         _wallOutline.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        _wallOutline.startWidth = AppHelper._lrThickness;
+        _wallOutline.endWidth = AppHelper._lrThickness;
         _wallGenerator = new ProceduarlwallGenerator();
     }
 
@@ -43,22 +43,22 @@ public class DrawRoomState : ICameraSubState
 
     public void OnTouchStart(Vector3 position)
     {
-        foreach (WallPoint wp in WallPointManager.Instance._allWallPoints)
+        foreach(WallPoint wp in WallPointManager.Instance._allWallPoints)
         {
-            if (AppHelper.CanSnapPoint(position, wp._position))
+            if (AppHelper.CanSnapPoint(position + Vector3.up * AppHelper._lrYPos, wp._position))
             {
-                _startPos = AppHelper.SnapPoint(wp._position, position);
+                _startPos = wp._position;
                 _foundNearestPoint = true;
                 break;
             }
         }
         if (!_foundNearestPoint)
         {
-            _startPos = position;
+            _startPos = position + Vector3.up * AppHelper._lrYPos;
             _foundNearestPoint = false;
         }
         _wallOutline.positionCount = 1;
-        _wallOutline.SetPosition(0, _startPos + Vector3.up * 10);
+        _wallOutline.SetPosition(0, _startPos);
     }
 
     public void OnTouchHold(Vector3 position)
@@ -66,10 +66,10 @@ public class DrawRoomState : ICameraSubState
         if (_wallOutline.positionCount != 2)
         {
             _wallOutline.positionCount = 2;
-            _wallOutline.SetPosition(0, _startPos + Vector3.up * 10);
+            _wallOutline.SetPosition(0, _startPos);
         }
-
-        _wallOutline.SetPosition(1, position + Vector3.up * 10);
+        position = AppHelper.WrapPosition(_startPos, position);
+        _wallOutline.SetPosition(1, position + Vector3.up * AppHelper._lrYPos);
     }
 
     public void OnTouchEnd(Vector3 position)
@@ -85,7 +85,6 @@ public class DrawRoomState : ICameraSubState
     }
     private void DrawSingleWall(Vector3 position)
     {
-        // Create a parent GameObject to hold all 6 quads
         GameObject wallGO = new GameObject("Wall");
         wallGO.transform.parent = _currentRoom.transform;
 
@@ -95,25 +94,38 @@ public class DrawRoomState : ICameraSubState
         // Create its wall Point
         WallPoint startWallPoint = WallPointManager.Instance.CreateOrGetwallPoints(_startPos, "StartWallPoint");
 
-        WallPoint endWallPoint = WallPointManager.Instance.CreateOrGetwallPoints(position, "EndWallPoint");
+        position = AppHelper.WrapPosition(_startPos, position);
+        WallPoint endWallPoint = WallPointManager.Instance.CreateOrGetwallPoints(position + Vector3.up * AppHelper._lrYPos, "EndWallPoint");
 
         startWallPoint.transform.SetParent(wallComp.transform);
         endWallPoint.transform.SetParent(wallComp.transform);
 
+        startWallPoint._connectedWalls.Add(wallComp);
+        endWallPoint._connectedWalls.Add(wallComp);
+
         // Attach Wall Point to the wall
-        wallComp.SetStartAndEndPosition(startWallPoint, endWallPoint);
+        wallComp.SetStartAndEndPosition(startWallPoint, endWallPoint, _currentRoom);
 
         // Generate procedural wall geometry under this wall GameObject
+        // This is for generating all the walls in 3d
         //_wallGenerator.MapAllRequiredPoints(startWallPoint._position, endWallPoint._position, wallGO.transform);
 
         ResetWallOutlineBase();
         // Register wall in Room
         _currentRoom._allRoomWalls.Add(wallComp);
+
+        Debug.Log($"Start Position = {_startPos}");
+        Debug.Log($"End Position = {position + Vector3.up * AppHelper._lrYPos}");
+        _currentRoom._wallCorners.Add(startWallPoint._position);
+        _currentRoom._wallCorners.Add(endWallPoint._position);
+
+        AppHelper.InvokeOnWallCreation();
     }
 
     private void ResetWallOutlineBase()
     {
         _wallOutline.positionCount = 0;
+        _foundNearestPoint = false;
     }
 
 }

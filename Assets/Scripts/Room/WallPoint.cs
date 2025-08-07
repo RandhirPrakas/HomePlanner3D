@@ -8,19 +8,30 @@ public class WallPoint : MonoBehaviour
 {
     public Vector3 _position;
 
-    public List<Wall> connectedWalls = new List<Wall>();
+    public HashSet<Wall> _connectedWalls = new HashSet<Wall>();
 
-    public WallPoint(Vector3 position)
-    { 
-        GameObject go = new GameObject("WallPoint");
-        go.transform.position = _position;
+    public GameObject _activeSphere;
+
+    public void SetHighlightVisual(GameObject visual)
+    {
+        _activeSphere = visual;
+    }
+
+    public void Initialize(Vector3 position)
+    {
         _position = position;
+        transform.position = position;
     }
 
     public void SetPosition(Vector3 newPos)
     {
         _position = newPos;
-        foreach (var wall in connectedWalls)
+        transform.position = newPos;
+
+        if (_activeSphere != null)
+            _activeSphere.transform.position = newPos;
+
+        foreach (var wall in _connectedWalls)
             wall.UpdateFromPoints();
     }
 }
