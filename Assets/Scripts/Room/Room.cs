@@ -10,10 +10,19 @@ public class Room : MonoBehaviour
     public Canvas _roomCanvas;
     public HashSet<Vector3> _wallCorners = new HashSet<Vector3>();
     private List<Vector3> _flattenedList = new List<Vector3>();
+
+    private GameObject _floor;
+    private Material _floorMaterial;
     private void Awake()
     {
         AppHelper.OnWallCreation += OnWallCreation;
     }
+
+    private void Start()
+    {
+        _floorMaterial = Resources.Load<Material>("ProceduralMaterials/DefaultFloorMaterial");
+    }
+
 
     public void SpawnWallLabelCanvas()
     {
@@ -54,22 +63,23 @@ public class Room : MonoBehaviour
 
     private void GenerateFloor()
     {
-        GameObject floor = transform.Find("Floor")?.gameObject;
-        if (floor == null)
+        _floor = transform.Find("Floor")?.gameObject;
+        if (_floor == null)
         {
-            floor = new GameObject("Floor");
-            floor.transform.parent = this.transform;
-            floor.transform.localPosition = Vector3.zero;
-            floor.transform.localRotation = Quaternion.identity;
+            _floor = new GameObject("Floor");
+            _floor.transform.parent = this.transform;
+            _floor.transform.localPosition = Vector3.zero;
+            _floor.transform.localRotation = Quaternion.identity;
         }
 
         // Ensure MeshFilter and MeshRenderer exist
-        var meshFilter = floor.GetComponent<MeshFilter>();
-        if (meshFilter == null) meshFilter = floor.AddComponent<MeshFilter>();
+        var meshFilter = _floor.GetComponent<MeshFilter>();
+        if (meshFilter == null) meshFilter = _floor.AddComponent<MeshFilter>();
 
-        var meshRenderer = floor.GetComponent<MeshRenderer>();
-        if (meshRenderer == null) meshRenderer = floor.AddComponent<MeshRenderer>();
+        var meshRenderer = _floor.GetComponent<MeshRenderer>();
+        if (meshRenderer == null) meshRenderer = _floor.AddComponent<MeshRenderer>();
 
+        meshRenderer.material = _floorMaterial;
         // Clear mesh if it exists
         if (meshFilter.sharedMesh != null)
         {
@@ -84,15 +94,16 @@ public class Room : MonoBehaviour
         }
 
         // Generate new mesh
-        var floorGenerator = floor.GetComponent<QuadGenerator>();
+        var floorGenerator = _floor.GetComponent<QuadGenerator>();
         if (floorGenerator == null)
         {
-            floorGenerator = floor.AddComponent<QuadGenerator>();
+            floorGenerator = _floor.AddComponent<QuadGenerator>();
         }
         
 
         Mesh newMesh = floorGenerator.GenerateFloor(_flattenedList);
         meshFilter.mesh = newMesh;
+        
 
 
         // Enable/disable renderer based on point count
@@ -133,7 +144,7 @@ public class Room : MonoBehaviour
         {
             float angleA = Mathf.Atan2(a.z - center.z, a.x - center.x);
             float angleB = Mathf.Atan2(b.z - center.z, b.x - center.x);
-            return angleB.CompareTo(angleA); // Flip comparison for CCW
+            return angleB.CompareTo(angleA); 
         });
 
         return points;
@@ -156,4 +167,9 @@ public class Room : MonoBehaviour
         GenerateFloor();
     }
 
+
+    public void CleanUpNullWalls()
+{
+    _allRoomWalls.RemoveAll(wall => wall == null);
+}
 }

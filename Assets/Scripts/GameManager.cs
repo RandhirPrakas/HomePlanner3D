@@ -61,10 +61,22 @@ public class GameManager : MonoBehaviour
             }
             else if(_subStateManager.GetCurrentSubState()?.GetType() == typeof(EditRoomPointsState))
             {
-                _subStateManager.SetSubState(new DrawRoomState());
+                Room room = (RoomManager.Instance._allRooms == null || RoomManager.Instance._allRooms.Count == 0)?null : RoomManager.Instance._allRooms[0];
+                _subStateManager.SetSubState(new DrawRoomState(room));
             }
         }
-        else if(Input.GetKeyDown(KeyCode.KeypadEnter))
+        else if (Input.GetKeyDown(KeyCode.F))
+        {
+            if (_subStateManager.GetCurrentSubState()?.GetType() == typeof(DrawRoomState))
+            {
+                _subStateManager.SetSubState(new EditRoomPointsState());
+            }
+            else if (_subStateManager.GetCurrentSubState()?.GetType() == typeof(EditRoomPointsState))
+            {
+                _subStateManager.SetSubState(new DrawRoomState(null));
+            }
+        }
+        else if (Input.GetKeyDown(KeyCode.KeypadEnter))
         {
             GenerateWalls();
         }

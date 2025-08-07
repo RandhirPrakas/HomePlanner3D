@@ -1,5 +1,7 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UIElements;
+using static UnityEngine.GraphicsBuffer;
 
 public class EditRoomPointsState : ICameraSubState
 {
@@ -47,14 +49,77 @@ public class EditRoomPointsState : ICameraSubState
     {
         if (_selectedPoint != null)
         {
-            _selectedPoint.SetPosition(position + Vector3.up*AppHelper._lrYPos);
+            _selectedPoint.SetPosition(position + Vector3.up * AppHelper._lrYPos);
+        }
+
+        if (_selectedPoint != null)
+        {
+            var allOtherPoints = WallPointManager.Instance._allWallPoints
+                .FindAll(p => p != _selectedPoint);
+
+            Vector3 snappedPosition = AppHelper.SmartSnapToAxis(position, allOtherPoints);
+
+           
+            snappedPosition += Vector3.up * AppHelper._lrYPos;
+
+            
+            _selectedPoint.SetPosition(snappedPosition);
         }
     }
 
     public void OnTouchEnd(Vector3 position)
     {
-        _selectedPoint = null;
+        if (_selectedPoint != null)
+        {
+            Vector3 snappedPos = AppHelper.SmartSnapToAxis(position, WallPointManager.Instance._allWallPoints);
+            snappedPos += Vector3.up * AppHelper._lrYPos;
+
+            WallPoint target = WallPointManager.Instance.GetExistingPointAt(snappedPos, _selectedPoint);
+
+            /*if (target != null)
+            {
+                _selectedPoint.MergeWith(target);
+
+                _selectedPoint = target;
+
+                HashSet<Room> affectedRooms = _selectedPoint.GetParentRooms();
+
+                foreach (Room room in affectedRooms)
+                {
+                    room.CleanUpNullWalls();
+                    room.UpdateFloorOnEditingPoints();
+                }
+            }*/
+
+            if (target != null)
+            {
+                _selectedPoint.MergeWith(target);
+                HashSet<Room> affectedRooms = target.GetParentRooms();
+
+                foreach (Room room in affectedRooms)
+                {
+                    //room._allRoomWalls.RemoveAll(w => w == null);
+                    room.CleanUpNullWalls();
+
+                    foreach (var wall in room._allRoomWalls)
+                    {
+                        wall.UpdateFromPoints();
+                    }
+
+                    room.UpdateFloorOnEditingPoints();
+                }
+            }
+            else
+            {
+                _selectedPoint.SetPosition(snappedPos);
+            }
+
+            _selectedPoint = null;
+        }
+
+
     }
+
 
     private WallPoint GetPointUnderTouch(Vector3 position)
     {

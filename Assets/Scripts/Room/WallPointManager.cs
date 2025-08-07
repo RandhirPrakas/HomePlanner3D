@@ -37,5 +37,20 @@ public class WallPointManager : MonoBehaviour
         return wallPoint;
     }
 
-    
+    public WallPoint GetExistingPointAt(Vector3 position, WallPoint wallpoint = null)
+    {
+        foreach (var wp in _allWallPoints)
+        {
+            if (wp == wallpoint) continue;
+
+            if (Vector3.Distance(wp._position, position) < AppHelper._pointSnapThreshold)
+            {
+                return wp;
+            }
+        }
+
+        return null;
+    }
+
+
 }

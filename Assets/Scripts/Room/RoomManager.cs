@@ -8,6 +8,8 @@ public class RoomManager : MonoBehaviour
 
     public List<Room> _allRooms = new List<Room>();
 
+    public Room _activeRoom;
+
     private void Awake()
     {
         if (Instance == null)
@@ -18,5 +20,10 @@ public class RoomManager : MonoBehaviour
         {
             Destroy(gameObject);
         }
+    }
+
+    public void SetActiveRoom(Room room)
+    {
+        _activeRoom = room;
     }
 }

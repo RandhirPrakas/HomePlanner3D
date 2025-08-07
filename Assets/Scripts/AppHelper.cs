@@ -1,6 +1,7 @@
 
 // Will Contain wrapper, calculations, some unique feature which will be used later etcs
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 public static class AppHelper
@@ -52,6 +53,44 @@ public static class AppHelper
             pointToSnap = snapPosition;
         }
         return pointToSnap;
+    }
+
+    public static Vector3 SmartSnapToAxis(Vector3 currentPosition, List<WallPoint> allWallPoints)
+    {
+        float closestXDiff = float.MaxValue;
+        float closestZDiff = float.MaxValue;
+        float? snapX = null;
+        float? snapZ = null;
+
+        foreach (var wp in allWallPoints)
+        {
+            float xDiff = Mathf.Abs(currentPosition.x - wp._position.x);
+            float zDiff = Mathf.Abs(currentPosition.z - wp._position.z);
+
+            if (xDiff < closestXDiff)
+            {
+                closestXDiff = xDiff;
+                snapX = wp._position.x;
+            }
+
+            if (zDiff < closestZDiff)
+            {
+                closestZDiff = zDiff;
+                snapZ = wp._position.z;
+            }
+        }
+
+        if (closestXDiff < _pointSnapThreshold)
+        {
+            currentPosition.x = snapX.Value;
+        }
+
+        if (closestZDiff < _pointSnapThreshold)
+        {
+            currentPosition.z = snapZ.Value;
+        }
+
+        return currentPosition;
     }
 
     public static float DistanceBetweenTwoPoints(Vector3 a, Vector3 b)
