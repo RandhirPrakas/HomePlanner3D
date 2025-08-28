@@ -1,7 +1,5 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UIElements;
-using static UnityEngine.GraphicsBuffer;
 
 public class EditRoomPointsState : ICameraSubState
 {
@@ -40,16 +38,16 @@ public class EditRoomPointsState : ICameraSubState
 
     public void Update() { }
 
-    public void OnTouchStart(Vector3 position)
+    public void OnTouchStart(Vector3 worldPos, Vector2 screenPos)
     {
-        _selectedPoint = GetPointUnderTouch(position);
+        _selectedPoint = GetPointUnderTouch(worldPos);
     }
 
-    public void OnTouchHold(Vector3 position)
+    public void OnTouchHold(Vector3 worldPos, Vector2 screenPos)
     {
         if (_selectedPoint != null)
         {
-            _selectedPoint.SetPosition(position + Vector3.up * AppHelper._lrYPos);
+            _selectedPoint.SetPosition(worldPos + Vector3.up * AppHelper._lrYPos);
         }
 
         if (_selectedPoint != null)
@@ -57,7 +55,7 @@ public class EditRoomPointsState : ICameraSubState
             var allOtherPoints = WallPointManager.Instance._allWallPoints
                 .FindAll(p => p != _selectedPoint);
 
-            Vector3 snappedPosition = AppHelper.SmartSnapToAxis(position, allOtherPoints);
+            Vector3 snappedPosition = AppHelper.SmartSnapToAxis(worldPos, allOtherPoints);
 
            
             snappedPosition += Vector3.up * AppHelper._lrYPos;
@@ -67,29 +65,15 @@ public class EditRoomPointsState : ICameraSubState
         }
     }
 
-    public void OnTouchEnd(Vector3 position)
+    public void OnTouchEnd(Vector3 worldPos, Vector2 screenPos)
     {
         if (_selectedPoint != null)
         {
-            Vector3 snappedPos = AppHelper.SmartSnapToAxis(position, WallPointManager.Instance._allWallPoints);
+            Vector3 snappedPos = AppHelper.SmartSnapToAxis(worldPos, WallPointManager.Instance._allWallPoints);
             snappedPos += Vector3.up * AppHelper._lrYPos;
 
             WallPoint target = WallPointManager.Instance.GetExistingPointAt(snappedPos, _selectedPoint);
 
-            /*if (target != null)
-            {
-                _selectedPoint.MergeWith(target);
-
-                _selectedPoint = target;
-
-                HashSet<Room> affectedRooms = _selectedPoint.GetParentRooms();
-
-                foreach (Room room in affectedRooms)
-                {
-                    room.CleanUpNullWalls();
-                    room.UpdateFloorOnEditingPoints();
-                }
-            }*/
 
             if (target != null)
             {
@@ -132,5 +116,9 @@ public class EditRoomPointsState : ICameraSubState
         }
         return null;
     }
-        
+
+    public void Init(Vector3 worldPos, Vector2 screenPos)
+    {
+        throw new System.NotImplementedException();
+    }
 }

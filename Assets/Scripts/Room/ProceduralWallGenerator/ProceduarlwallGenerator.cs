@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -24,6 +23,12 @@ public class ProceduarlwallGenerator
 
     public void MapAllRequiredPoints(Vector3 p1, Vector3 p2, Transform wall)
     {
+        float extensionAmount = AppHelper._wallThickness / 4f;
+        Vector3 direction = (p2 - p1).normalized;
+
+        p1 -= direction * extensionAmount;
+        p2 += direction * extensionAmount;
+
         Vector3 dir = (p2 - p1).normalized;
         Vector3 perp = new Vector3(-dir.z, 0, dir.x); // XZ plane perpendicular
 
@@ -91,17 +96,18 @@ public class ProceduarlwallGenerator
         Mesh combinedMesh = new Mesh();
         combinedMesh.CombineMeshes(combine.ToArray());
 
-        var parentMF = parent.gameObject.AddComponent<MeshFilter>();
-        var parentMR = parent.gameObject.AddComponent<MeshRenderer>();
+        var parentMF = parent.GetComponent<MeshFilter>();
+        if (parentMF == null) parentMF = parent.gameObject.AddComponent<MeshFilter>();
+        
+        var parentMR = parent.GetComponent<MeshRenderer>();
+        if (parentMR == null) parentMR = parent.gameObject.AddComponent<MeshRenderer>();
+
         parentMF.sharedMesh = combinedMesh;
         parentMR.material = _quadMaterial;
 
-        // Clean up child quads
         foreach (var child in children)
         {
             GameObject.DestroyImmediate(child);
         }
     }
-
-    
 }

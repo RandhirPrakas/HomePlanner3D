@@ -36,18 +36,16 @@ public class Room : MonoBehaviour
         CanvasScaler cs = canvasGO.AddComponent<CanvasScaler>();
         cs.dynamicPixelsPerUnit = 10;
 
-        canvasGO.AddComponent<GraphicRaycaster>();
-
         RectTransform rt = _roomCanvas.GetComponent<RectTransform>();
         rt.sizeDelta = new Vector2(150, 150);
         canvasGO.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
     }
 
-    private void OnWallCreation()
+    public void OnWallCreation()
     {
         Debug.Log(_wallCorners.Count);
 
-        if(_wallCorners.Count < 4)
+        if (_wallCorners.Count < 4)
         {
             Debug.Log("Cannot Create Room");
             return;
@@ -57,8 +55,17 @@ public class Room : MonoBehaviour
         _flattenedList = SortCounterClockwiseXZ(_flattenedList);
         //GenerateFloor
 
+        _flattenedList.Clear();
+        foreach (var wall in _allRoomWalls)
+        {
+            if (!_flattenedList.Any(p => Vector3.Distance(p, wall.GetStartPosition()) < 0.001f))
+                _flattenedList.Add(wall.GetStartPosition());
+            if (!_flattenedList.Any(p => Vector3.Distance(p, wall.GetEndPosition()) < 0.001f))
+                _flattenedList.Add(wall.GetEndPosition());
+        }
+
         GenerateFloor();
-        
+
     }
 
     private void GenerateFloor()
@@ -99,11 +106,11 @@ public class Room : MonoBehaviour
         {
             floorGenerator = _floor.AddComponent<QuadGenerator>();
         }
-        
+
 
         Mesh newMesh = floorGenerator.GenerateFloor(_flattenedList);
         meshFilter.mesh = newMesh;
-        
+
 
 
         // Enable/disable renderer based on point count
@@ -144,14 +151,14 @@ public class Room : MonoBehaviour
         {
             float angleA = Mathf.Atan2(a.z - center.z, a.x - center.x);
             float angleB = Mathf.Atan2(b.z - center.z, b.x - center.x);
-            return angleB.CompareTo(angleA); 
+            return angleB.CompareTo(angleA);
         });
 
         return points;
     }
 
 
-    public void UpdateFloorOnEditingPoints()
+    /*public void UpdateFloorOnEditingPoints()
     {
         HashSet<Vector3> uniqueCorners = new HashSet<Vector3>();
 
@@ -165,11 +172,62 @@ public class Room : MonoBehaviour
         _flattenedList = SortCounterClockwiseXZ(_flattenedList);
 
         GenerateFloor();
+    }*/
+
+    public void UpdateFloorOnEditingPoints()
+    {
+        List<Vector3> corners = new List<Vector3>();
+
+        foreach (Wall wall in _allRoomWalls)
+        {
+            corners.Add(wall.GetStartPosition());
+            corners.Add(wall.GetEndPosition());
+        }
+
+        _flattenedList = MergeClosePoints(corners, 0.01f);
+
+        _flattenedList = _flattenedList.Select(p => new Vector3(p.x, 0.1f, p.z)).ToList();
+
+        _flattenedList = SortCounterClockwiseXZ(_flattenedList);
+
+        _flattenedList.Clear();
+        foreach (var wall in _allRoomWalls)
+        {
+            if (!_flattenedList.Any(p => Vector3.Distance(p, wall.GetStartPosition()) < 0.001f))
+                _flattenedList.Add(wall.GetStartPosition());
+            if (!_flattenedList.Any(p => Vector3.Distance(p, wall.GetEndPosition()) < 0.001f))
+                _flattenedList.Add(wall.GetEndPosition());
+        }
+        GenerateFloor();
+    }
+
+    private List<Vector3> MergeClosePoints(List<Vector3> points, float tolerance)
+    {
+        List<Vector3> result = new List<Vector3>();
+        foreach (var p in points)
+        {
+            if (!result.Any(r => Vector3.Distance(r, p) < tolerance))
+            {
+                result.Add(p);
+            }
+        }
+        return result;
     }
 
 
     public void CleanUpNullWalls()
-{
-    _allRoomWalls.RemoveAll(wall => wall == null);
-}
+    {
+        _allRoomWalls.RemoveAll(wall => wall == null);
+    }
+
+    public bool HasCornerNear(Vector3 point, float eps = 0.001f)
+    {
+        foreach (var c in _wallCorners)
+        {
+            if ((c - point).sqrMagnitude <= eps * eps)
+                return true;
+        }
+        return false;
+    }
+
 }

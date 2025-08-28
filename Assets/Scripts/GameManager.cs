@@ -7,12 +7,13 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager Instance;
 
+    public UIManager _uiManager;
     public TouchManager _touchManager;
 
     [SerializeField] private CameraStateManager _cameraStateManager;
     [SerializeField] private SubStateManager _subStateManager;
 
-
+    public Wall _activeWall;
     #region Getter and Setter
 
     public void SetSubState(ICameraSubState sub)
@@ -30,6 +31,11 @@ public class GameManager : MonoBehaviour
         return _cameraStateManager.GetCurrentState();
     }
 
+    public SubStateManager GetSubStateManager()
+    {
+        return _subStateManager;
+    }
+
     #endregion
 
     private void Awake()
@@ -38,7 +44,7 @@ public class GameManager : MonoBehaviour
         if (Instance == null)
         {
             Instance = this;
-            DontDestroyOnLoad(gameObject); 
+            DontDestroyOnLoad(gameObject);
         }
         else
         {
@@ -48,35 +54,81 @@ public class GameManager : MonoBehaviour
         Initialize();
     }
 
+    private void Start()
+    {
+        _subStateManager.Start();
+    }
+
     private void Update()
     {
         _cameraStateManager.Update();
         _subStateManager.Update();
 
-        if(Input.GetKeyDown(KeyCode.Space))
+        // --- New Hotkey System ---
+
+        // ESCAPE KEY: Universal exit to IdleState
+        if (Input.GetKeyDown(KeyCode.Escape))
         {
-            if(_subStateManager.GetCurrentSubState()?.GetType() == typeof(DrawRoomState))
+            if (GetSubState()?.GetType() != typeof(IdleState))
             {
-                _subStateManager.SetSubState(new EditRoomPointsState());
-            }
-            else if(_subStateManager.GetCurrentSubState()?.GetType() == typeof(EditRoomPointsState))
-            {
-                Room room = (RoomManager.Instance._allRooms == null || RoomManager.Instance._allRooms.Count == 0)?null : RoomManager.Instance._allRooms[0];
-                _subStateManager.SetSubState(new DrawRoomState(room));
+                SetSubState(new IdleState());
             }
         }
-        else if (Input.GetKeyDown(KeyCode.F))
+
+        // D KEY: Enter DrawRoomState from Idle
+        if (Input.GetKeyDown(KeyCode.D))
         {
-            if (_subStateManager.GetCurrentSubState()?.GetType() == typeof(DrawRoomState))
+            if (GetSubState()?.GetType() == typeof(IdleState))
             {
-                _subStateManager.SetSubState(new EditRoomPointsState());
-            }
-            else if (_subStateManager.GetCurrentSubState()?.GetType() == typeof(EditRoomPointsState))
-            {
-                _subStateManager.SetSubState(new DrawRoomState(null));
+                // Start a new room or get the most recent one
+                Room room = (RoomManager.Instance._allRooms == null || RoomManager.Instance._allRooms.Count == 0) ? null : RoomManager.Instance._activeRoom;
+                SetSubState(new DrawRoomState(room));
             }
         }
-        else if (Input.GetKeyDown(KeyCode.KeypadEnter))
+
+        // E KEY: Enter EditRoomPointsState from Idle
+        if (Input.GetKeyDown(KeyCode.E))
+        {
+            if (GetSubState()?.GetType() == typeof(IdleState))
+            {
+                SetSubState(new EditRoomPointsState());
+            }
+        }
+
+        // A KEY: Enter AddDoorState from Idle
+        if (Input.GetKeyDown(KeyCode.A))
+        {
+            if (GetSubState()?.GetType() == typeof(IdleState))
+            {
+                // Note: This requires a better system for selecting a wall.
+                // For now, it just grabs the first available wall for testing.
+                if (RoomManager.Instance._allRooms.Count > 0 && RoomManager.Instance._allRooms[0]._allRoomWalls.Count > 0)
+                {
+                    Wall wall = RoomManager.Instance._allRooms[0]._allRoomWalls[0];
+                    SetSubState(new AddDoorState(wall));
+                }
+                else
+                {
+                    Debug.LogWarning("Cannot enter AddDoorState. No walls exist to add a door to!");
+                }
+            }
+        }
+
+        // O KEY: Toggle Camera State (Orthographic/Perspective)
+        if (Input.GetKeyDown(KeyCode.O))
+        {
+            if (GetCameraState()?.GetType() == typeof(OrthographicState))
+            {
+                _cameraStateManager.SetCameraState(new PerspectiveState());
+            }
+            else if (GetCameraState()?.GetType() == typeof(PerspectiveState))
+            {
+                _cameraStateManager.SetCameraState(new OrthographicState());
+            }
+        }
+
+        // ENTER KEY: Generate the final 3D walls
+        if (Input.GetKeyDown(KeyCode.KeypadEnter) || Input.GetKeyDown(KeyCode.Return))
         {
             GenerateWalls();
         }
@@ -93,27 +145,24 @@ public class GameManager : MonoBehaviour
     void InitStates()
     {
         _cameraStateManager.SetCameraState(new OrthographicState());
-        _subStateManager.SetSubState(new DrawRoomState());
-
-        /*_cameraStateManager = new CameraStateManager();
-        _subStateManager = new SubStateManager();*/
+        // Start in the safe IdleState
+        _subStateManager.SetSubState(new IdleState());
     }
 
-    // just for testing 
     private ProceduarlwallGenerator _wallGenerator;
-    private void GenerateWalls()
+    public void GenerateWalls()
     {
-        if(_wallGenerator == null)
+        if (_wallGenerator == null)
         {
             _wallGenerator = new ProceduarlwallGenerator();
         }
 
-        foreach(Room room in RoomManager.Instance._allRooms)
+        foreach (Room room in RoomManager.Instance._allRooms)
         {
-            for(int i=0;i<room._allRoomWalls.Count;i++)
+            for (int i = 0; i < room._allRoomWalls.Count; i++)
             {
                 Wall wall = room._allRoomWalls[i];
-                _wallGenerator.MapAllRequiredPoints(wall.GetStartPosition(), wall.GetEndPosition(),wall.gameObject.transform);
+                _wallGenerator.MapAllRequiredPoints(wall.GetStartPosition(), wall.GetEndPosition(), wall.gameObject.transform);
             }
         }
     }

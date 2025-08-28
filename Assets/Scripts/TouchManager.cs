@@ -1,114 +1,155 @@
-using System.ComponentModel;
-using UnityEngine;
-
-/*public class TouchManager : MonoBehaviour
-{
-    [Header("Screen Touch / 2D details")]
-    [SerializeField] private Vector2 _initialTouchScreenPosition;
-    [SerializeField] private Vector2 _finalTouchScreenPosition;
-
-    [Space(10f)]
-    [Header("3D Details")]
-    [SerializeField] private Vector3 _initialTouchPosition;
-    [SerializeField] private Vector3 _finalTouchPosition;
-
-    #region Temporary Variables
-    [Tooltip("Temporary Game object, must be deleted later")]
-    public GameObject TestGO;
-    public float testZpos;
-
-    #endregion
-
-    private void Start()
-    {
-        Debug.Log($"Width = {Screen.width}");
-        Debug.Log($"Height = {Screen.height}");
-    }
-
-    private void Update()
-    {
-
-        if (Input.touchCount == 1)
-        {
-            Touch touch = Input.GetTouch(0);
-
-            switch (touch.phase)
-            {
-                case TouchPhase.Began:
-                    _initialTouchScreenPosition = touch.position;
-                    _initialTouchPosition = Camera.main.ScreenToWorldPoint(new Vector3(touch.position.x, touch.position.y, testZpos));
-                    Debug.Log($"Initial Touch World Position = {_initialTouchPosition}");
-                    Instantiate(TestGO, _initialTouchPosition, Quaternion.identity);
-                    break;
-
-                case TouchPhase.Ended:
-                    _finalTouchScreenPosition = touch.position;
-                    _finalTouchPosition = Camera.main.ScreenToWorldPoint(new Vector3(touch.position.x, touch.position.y, testZpos));
-                    Debug.Log($"Final Touch World Position = {_finalTouchPosition}");
-                    Instantiate(TestGO, _finalTouchPosition, Quaternion.identity);
-
-                    if(AppHelper.DistanceBetweenTwoPoints(_initialTouchPosition, _finalTouchPosition) >=5f)
-                    {
-                        ProceduarlwallGenerator proceduarlwall = new ProceduarlwallGenerator();
-                        proceduarlwall.MapAllRequiredPoints(_initialTouchPosition, _finalTouchPosition, this.transform);
-                    }
-                    break;
-            }
-        }
-    }
-}
-*/
+﻿using UnityEngine;
+using UnityEngine.EventSystems;
 
 public class TouchManager : MonoBehaviour
 {
     [SerializeField] private float testZpos = 0f;
 
+    private Vector2 _initialTouchPosition, _currentTouchPosition;
+    private float _initialTouchTime, _currentTouchTime;
+
+    private bool _isDragging = false;
+    private float _tapThresholdTime = 0.3f;
+    private float _dragThreshold = 5f; // pixels before we consider it a drag
+
     private void Update()
     {
         var currentSubState = GameManager.Instance.GetSubState();
-        if (GameManager.Instance.GetSubState() == null) return;
-
+        if (currentSubState == null) return;
 
 #if UNITY_EDITOR
-        // Emulate touch with mouse
+        if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
+        {
+            Debug.LogWarning("<color = red>UI pe Cursor hai</color>");
+            return;
+        }
+
         if (Input.GetMouseButtonDown(0))
         {
-            Vector3 worldPos = Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, testZpos));
-            GameManager.Instance.GetSubState().OnTouchStart(worldPos);
+            _initialTouchPosition = Input.mousePosition;
+            _initialTouchTime = Time.time;
+            _isDragging = false;
         }
-        else if (Input.GetMouseButton(0))
+
+        if (Input.GetMouseButton(0))
         {
-            Vector3 worldPos = Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, testZpos));
-            GameManager.Instance.GetSubState().OnTouchHold(worldPos);
+            _currentTouchPosition = Input.mousePosition;
+
+            // check if drag threshold exceeded
+            if (!_isDragging && (_currentTouchPosition - _initialTouchPosition).magnitude > _dragThreshold)
+            {
+                _isDragging = true;
+
+                Vector3 worldPos = ScreenToWorld(_initialTouchPosition);
+                currentSubState.OnTouchStart(worldPos, _initialTouchPosition);
+            }
+
+            if (_isDragging)
+            {
+                Vector3 worldPos = ScreenToWorld(_currentTouchPosition);
+                currentSubState.OnTouchHold(worldPos, _currentTouchPosition);
+            }
         }
-        else if (Input.GetMouseButtonUp(0))
+
+        if (Input.GetMouseButtonUp(0))
         {
-            Vector3 worldPos = Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, testZpos));
-            GameManager.Instance.GetSubState().OnTouchEnd(worldPos);
+            _currentTouchTime = Time.time;
+
+            if (_isDragging)
+            {
+                Vector3 worldPos = ScreenToWorld(Input.mousePosition);
+                currentSubState.OnTouchEnd(worldPos, Input.mousePosition);
+            }
+            else if (IsTap())
+            {
+                HandleTap(Input.mousePosition);
+            }
         }
+
 #else
-    // Original touch logic here
         if (Input.touchCount != 1) return;
 
         Touch touch = Input.GetTouch(0);
-        Vector3 worldPos = Camera.main.ScreenToWorldPoint(new Vector3(touch.position.x, touch.position.y, testZpos));
+
+        if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject(touch.fingerId))
+            return;
 
         switch (touch.phase)
         {
             case TouchPhase.Began:
-                currentSubState.OnTouchStart(worldPos);
+                _initialTouchPosition = touch.position;
+                _initialTouchTime = Time.time;
+                _isDragging = false;
                 break;
 
             case TouchPhase.Moved:
             case TouchPhase.Stationary:
-                currentSubState.OnTouchHold(worldPos);
+                _currentTouchPosition = touch.position;
+
+                if (!_isDragging && (_currentTouchPosition - _initialTouchPosition).magnitude > _dragThreshold)
+                {
+                    _isDragging = true;
+                    Vector3 worldPos = ScreenToWorld(_initialTouchPosition);
+                    currentSubState.OnTouchStart(worldPos, _initialTouchPosition);
+                }
+
+                if (_isDragging)
+                {
+                    Vector3 worldPos = ScreenToWorld(_currentTouchPosition);
+                    currentSubState.OnTouchHold(worldPos, _currentTouchPosition);
+                }
                 break;
 
             case TouchPhase.Ended:
-                currentSubState.OnTouchEnd(worldPos);
+                _currentTouchTime = Time.time;
+
+                if (_isDragging)
+                {
+                    Vector3 worldPos = ScreenToWorld(touch.position);
+                    currentSubState.OnTouchEnd(worldPos, touch.position);
+                }
+                else if (IsTap())
+                {
+                    HandleTap(touch.position);
+                }
                 break;
         }
 #endif
     }
-}
 
+    private Vector3 ScreenToWorld(Vector2 screenPos)
+    {
+        float z = Mathf.Abs(Camera.main.transform.position.z);
+        Vector3 worldPos = Camera.main.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, z));
+        worldPos.y = 0.1f;
+        return worldPos;
+    }
+
+    private bool IsTap()
+    {
+        return (_currentTouchTime - _initialTouchTime <= _tapThresholdTime &&
+                (_currentTouchPosition - _initialTouchPosition).magnitude < _dragThreshold);
+    }
+
+    private void HandleTap(Vector2 screenPos)
+    {
+        Ray ray = Camera.main.ScreenPointToRay(screenPos);
+        GameObject hitObject = null;
+        Vector3 worldPos = Vector3.zero;
+
+        if (Physics.Raycast(ray, out RaycastHit hit))
+        {
+            hitObject = hit.collider.gameObject;
+            worldPos = hit.point;
+        }
+        else
+        {
+            if (new Plane(Vector3.up, Vector3.zero).Raycast(ray, out float enter))
+            {
+                worldPos = ray.GetPoint(enter);
+            }
+        }
+
+        AppEventHandler.InvokeOnTouchEnd(hitObject, worldPos, screenPos);
+    }
+}

@@ -4,8 +4,8 @@ public class OrthographicState : CameraState
 {
     public override void Enter()
     {
-        Camera.main.orthographic = true;
         Debug.Log("Switched to Orthographic Mode");
+        Camera.main.orthographic = true;
     }
 
     public override void Exit()

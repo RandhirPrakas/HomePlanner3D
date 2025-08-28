@@ -17,7 +17,7 @@ public static class AppHelper
 
     #region Variables_PointsManagements
 
-    public static readonly float _pointSnapThreshold = 10f;
+    public static readonly float _pointSnapThreshold = 5f;
 
     #endregion
 
@@ -36,8 +36,8 @@ public static class AppHelper
     #endregion
 
 
-    public static readonly float _lrYPos = 1f;
-    public static readonly float _lrThickness = 2f;
+    public static readonly float _lrYPos = 0.1f;
+    public static readonly float _lrThickness = 0.5f;
 
     // this check if distance between two point is 
     public static bool CanSnapPoint(Vector3 a, Vector3 b)
@@ -118,4 +118,40 @@ public static class AppHelper
         return endPosition;
     }
 
+    // Calculate area from the list of Vector3 points
+    public static float CalculatePolygonArea(List<Vector3> points)
+    {
+        if (points == null || points.Count < 3)
+            return 0f;
+
+        float area = 0f;
+        for (int i = 0; i < points.Count; i++)
+        {
+            Vector3 p1 = points[i];
+            Vector3 p2 = points[(i + 1) % points.Count];
+
+            // Use XZ plane for area (like floor plan)
+            area += (p1.x * p2.z) - (p2.x * p1.z);
+        }
+
+        return Mathf.Abs(area) * 0.5f;
+    }
+
+    // Calculate area from the list of Vector2 points
+    public static float CalculatePolygonArea(List<Vector2> points)
+    {
+        if (points == null || points.Count < 3)
+            return 0f;
+
+        float area = 0f;
+        for (int i = 0; i < points.Count; i++)
+        {
+            Vector2 p1 = points[i];
+            Vector2 p2 = points[(i + 1) % points.Count];
+
+            area += (p1.x * p2.y) - (p2.x * p1.y);
+        }
+
+        return Mathf.Abs(area) * 0.5f;
+    }
 }
