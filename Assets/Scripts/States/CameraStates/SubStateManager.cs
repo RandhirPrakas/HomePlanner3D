@@ -1,4 +1,5 @@
 ﻿
+using Unity.VisualScripting;
 using UnityEngine;
 
 [System.Serializable]
@@ -6,7 +7,8 @@ public class SubStateManager
 {
     private ICameraSubState _currentSubState;
 
-    private IdleState _idleState = new IdleState();
+    private ICameraSubState _perspIdleState = new Persp_IdleState();
+    private ICameraSubState _orthoIdleState = new Ortho_IdleState();
     private EditRoomPointsState _editPointState = new EditRoomPointsState();
 
     #region Getter And Setter
@@ -36,11 +38,18 @@ public class SubStateManager
         _currentSubState?.Update();
     }
 
-    public void SetIdleState()
+    public void SetOrthoIdleState()
     {
-        if (_currentSubState == _idleState)
+        if (_currentSubState == _orthoIdleState)
             return;
-        SetSubState(_idleState);
+        SetSubState(_orthoIdleState);
+    }
+
+    public void SetPerspIdleState()
+    {
+        if (_currentSubState == _perspIdleState)
+            return;
+        SetSubState(_perspIdleState);
     }
 
     public void SetEditPointState()
@@ -57,36 +66,40 @@ public class SubStateManager
 
     private void SwitchSubstate(GameObject gameObject, Vector3 worldPos, Vector2 screenPos)
     {
-        if(gameObject.CompareTag("Ground") || gameObject.CompareTag("Wall"))
+        if (GameManager.Instance.GetCameraStateManager().GetCurrentState() is OrthographicState)
         {
-            foreach(WallPoint wp in WallPointManager.Instance._allWallPoints)
+
+            if (gameObject.CompareTag("Ground") || gameObject.CompareTag("Wall"))
             {
-                if((worldPos - wp._position).magnitude <= 5f)
+                foreach (WallPoint wp in WallPointManager.Instance._allWallPoints)
                 {
-                    SetEditPointState();
-                    return;
+                    if ((worldPos - wp._position).magnitude <= 5f)
+                    {
+                        SetEditPointState();
+                        return;
+                    }
                 }
             }
-        }
-        
-        if(gameObject.CompareTag("Ground"))
-        {
-            SetIdleState();
-        }
-        else if (gameObject.CompareTag("Wall"))
-        {
-            Wall wall = gameObject.GetComponentInParent<Wall>();
-            var currentState = GetCurrentSubState();
 
-            if (currentState is MoveWallState moveWallState)
+            if (gameObject.CompareTag("Ground"))
             {
-                // already in MoveWallState → just change active wall
-                moveWallState.SetActiveWall(wall);
+                SetOrthoIdleState();
             }
-            else
+            else if (gameObject.CompareTag("Wall"))
             {
-                // not in MoveWallState → enter new state
-                SetSubState(new MoveWallState(wall));
+                Wall wall = gameObject.GetComponentInParent<Wall>();
+                var currentState = GetCurrentSubState();
+
+                if (currentState is MoveWallState moveWallState)
+                {
+                    // already in MoveWallState → just change active wall
+                    moveWallState.SetActiveWall(wall);
+                }
+                else
+                {
+                    // not in MoveWallState → enter new state
+                    SetSubState(new MoveWallState(wall));
+                }
             }
         }
 

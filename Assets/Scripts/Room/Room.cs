@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using Unity.VisualScripting;
 using UnityEngine;
@@ -16,6 +16,11 @@ public class Room : MonoBehaviour
     private void Awake()
     {
         AppHelper.OnWallCreation += OnWallCreation;
+    }
+
+    private void OnDestroy()
+    {
+        AppHelper.OnWallCreation -= OnWallCreation;
     }
 
     private void Start()
@@ -52,17 +57,18 @@ public class Room : MonoBehaviour
         }
 
         _flattenedList = _wallCorners.Select(p => new Vector3(p.x, 0.1f, p.z)).ToList();
-        _flattenedList = SortCounterClockwiseXZ(_flattenedList);
+        //_flattenedList = SortCounterClockwiseXZ(_flattenedList);
+        Debug.Log("Flattenend List Count" + _flattenedList.Count);
         //GenerateFloor
 
-        _flattenedList.Clear();
-        foreach (var wall in _allRoomWalls)
+        //_flattenedList.Clear();
+        /*foreach (var wall in _allRoomWalls)
         {
             if (!_flattenedList.Any(p => Vector3.Distance(p, wall.GetStartPosition()) < 0.001f))
                 _flattenedList.Add(wall.GetStartPosition());
             if (!_flattenedList.Any(p => Vector3.Distance(p, wall.GetEndPosition()) < 0.001f))
                 _flattenedList.Add(wall.GetEndPosition());
-        }
+        }*/
 
         GenerateFloor();
 
@@ -81,7 +87,7 @@ public class Room : MonoBehaviour
 
         // Ensure MeshFilter and MeshRenderer exist
         var meshFilter = _floor.GetComponent<MeshFilter>();
-        if (meshFilter == null) meshFilter = _floor.AddComponent<MeshFilter>();
+        if (meshFilter == null) meshFilter = _floor.AddComponent<MeshFilter>();  
 
         var meshRenderer = _floor.GetComponent<MeshRenderer>();
         if (meshRenderer == null) meshRenderer = _floor.AddComponent<MeshRenderer>();
@@ -94,7 +100,7 @@ public class Room : MonoBehaviour
         }
 
         // Handle too few points
-        if (_wallCorners == null || _wallCorners.Count < 3)
+        if (_flattenedList == null || _flattenedList.Count < 3)
         {
             meshRenderer.enabled = false;
             return;
@@ -114,8 +120,45 @@ public class Room : MonoBehaviour
 
 
         // Enable/disable renderer based on point count
-        meshRenderer.enabled = _wallCorners.Count >= 3;
+        meshRenderer.enabled = _flattenedList.Count >= 3;
     }
+
+    private List<Vector3> BuildOrderedPolygonFromWalls(List<Wall> walls)
+    {
+        if (walls == null || walls.Count == 0) return new List<Vector3>();
+
+        // Start with first wall
+        List<Vector3> ordered = new List<Vector3>();
+        Wall current = walls[0];
+        Vector3 currentPoint = current.GetStartPosition();
+        ordered.Add(currentPoint);
+        Vector3 nextPoint = current.GetEndPosition();
+
+        while (ordered.Count < walls.Count)
+        {
+            ordered.Add(nextPoint);
+
+            // Find the next wall that starts where we ended
+            Wall nextWall = walls.FirstOrDefault(w =>
+                Vector3.Distance(w.GetStartPosition(), nextPoint) < 0.001f &&
+                !ordered.Contains(w.GetEndPosition()));
+
+            if (nextWall == null)
+                nextWall = walls.FirstOrDefault(w =>
+                    Vector3.Distance(w.GetEndPosition(), nextPoint) < 0.001f &&
+                    !ordered.Contains(w.GetStartPosition()));
+
+            if (nextWall == null)
+                break; // broken wall loop
+
+            nextPoint = (Vector3.Distance(nextWall.GetStartPosition(), nextPoint) < 0.001f)
+                ? nextWall.GetEndPosition()
+                : nextWall.GetStartPosition();
+        }
+
+        return SortCounterClockwiseXZ(ordered); // final cleanup
+    }
+
 
     private List<Vector3> SortClockwiseXZ(List<Vector3> points)
     {
@@ -190,7 +233,7 @@ public class Room : MonoBehaviour
 
         _flattenedList = SortCounterClockwiseXZ(_flattenedList);
 
-        _flattenedList.Clear();
+        //_flattenedList.Clear();
         foreach (var wall in _allRoomWalls)
         {
             if (!_flattenedList.Any(p => Vector3.Distance(p, wall.GetStartPosition()) < 0.001f))
@@ -230,4 +273,13 @@ public class Room : MonoBehaviour
         return false;
     }
 
+    public bool HasPoint(Vector3 pos, float tolerance = 0.01f)
+    {
+        foreach (var p in _wallCorners)
+        {
+            if (Vector3.Distance(p, pos) <= tolerance)
+                return true;
+        }
+        return false;
+    }
 }

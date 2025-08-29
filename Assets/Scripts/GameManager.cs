@@ -26,14 +26,15 @@ public class GameManager : MonoBehaviour
         return _subStateManager.GetCurrentSubState();
     }
 
-    public CameraState GetCameraState()
-    {
-        return _cameraStateManager.GetCurrentState();
-    }
 
     public SubStateManager GetSubStateManager()
     {
         return _subStateManager;
+    }
+
+    public CameraStateManager GetCameraStateManager()
+    {
+        return _cameraStateManager;
     }
 
     #endregion
@@ -69,16 +70,16 @@ public class GameManager : MonoBehaviour
         // ESCAPE KEY: Universal exit to IdleState
         if (Input.GetKeyDown(KeyCode.Escape))
         {
-            if (GetSubState()?.GetType() != typeof(IdleState))
+            if (GetSubState()?.GetType() != typeof(Ortho_IdleState))
             {
-                SetSubState(new IdleState());
+                SetSubState(new Ortho_IdleState());
             }
         }
 
         // D KEY: Enter DrawRoomState from Idle
         if (Input.GetKeyDown(KeyCode.D))
         {
-            if (GetSubState()?.GetType() == typeof(IdleState))
+            if (GetSubState()?.GetType() == typeof(Ortho_IdleState))
             {
                 // Start a new room or get the most recent one
                 Room room = (RoomManager.Instance._allRooms == null || RoomManager.Instance._allRooms.Count == 0) ? null : RoomManager.Instance._activeRoom;
@@ -89,7 +90,7 @@ public class GameManager : MonoBehaviour
         // E KEY: Enter EditRoomPointsState from Idle
         if (Input.GetKeyDown(KeyCode.E))
         {
-            if (GetSubState()?.GetType() == typeof(IdleState))
+            if (GetSubState()?.GetType() == typeof(Ortho_IdleState))
             {
                 SetSubState(new EditRoomPointsState());
             }
@@ -98,7 +99,7 @@ public class GameManager : MonoBehaviour
         // A KEY: Enter AddDoorState from Idle
         if (Input.GetKeyDown(KeyCode.A))
         {
-            if (GetSubState()?.GetType() == typeof(IdleState))
+            if (GetSubState()?.GetType() == typeof(Ortho_IdleState))
             {
                 // Note: This requires a better system for selecting a wall.
                 // For now, it just grabs the first available wall for testing.
@@ -114,24 +115,7 @@ public class GameManager : MonoBehaviour
             }
         }
 
-        // O KEY: Toggle Camera State (Orthographic/Perspective)
-        if (Input.GetKeyDown(KeyCode.O))
-        {
-            if (GetCameraState()?.GetType() == typeof(OrthographicState))
-            {
-                _cameraStateManager.SetCameraState(new PerspectiveState());
-            }
-            else if (GetCameraState()?.GetType() == typeof(PerspectiveState))
-            {
-                _cameraStateManager.SetCameraState(new OrthographicState());
-            }
-        }
 
-        // ENTER KEY: Generate the final 3D walls
-        if (Input.GetKeyDown(KeyCode.KeypadEnter) || Input.GetKeyDown(KeyCode.Return))
-        {
-            GenerateWalls();
-        }
     }
 
     private void Initialize()
@@ -146,24 +130,7 @@ public class GameManager : MonoBehaviour
     {
         _cameraStateManager.SetCameraState(new OrthographicState());
         // Start in the safe IdleState
-        _subStateManager.SetSubState(new IdleState());
+        _subStateManager.SetOrthoIdleState();
     }
 
-    private ProceduarlwallGenerator _wallGenerator;
-    public void GenerateWalls()
-    {
-        if (_wallGenerator == null)
-        {
-            _wallGenerator = new ProceduarlwallGenerator();
-        }
-
-        foreach (Room room in RoomManager.Instance._allRooms)
-        {
-            for (int i = 0; i < room._allRoomWalls.Count; i++)
-            {
-                Wall wall = room._allRoomWalls[i];
-                _wallGenerator.MapAllRequiredPoints(wall.GetStartPosition(), wall.GetEndPosition(), wall.gameObject.transform);
-            }
-        }
-    }
 }

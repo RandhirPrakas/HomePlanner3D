@@ -6,17 +6,20 @@ public class EditRoomPointsState : ICameraSubState
     private WallPoint _selectedPoint;
     private GameObject _highlightParent;
 
+    private readonly Color _highlightedColor = new Color(136, 91, 255, 255);
     public void Enter()
     {
         Debug.Log("Entered EditRoomPointsState");
 
         _highlightParent = new GameObject("WallPointHighlights");
 
+        int i = 0;
         foreach (WallPoint point in WallPointManager.Instance._allWallPoints)
         {
             GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            sphere.name = "sphere" + i;
             sphere.transform.position = point._position;
-            sphere.transform.localScale = Vector3.one * 3f;
+            sphere.transform.localScale = Vector3.one * 1.5f;
             sphere.GetComponent<Renderer>().material.color = Color.yellow;
             sphere.transform.SetParent(_highlightParent.transform);
 
@@ -24,8 +27,6 @@ public class EditRoomPointsState : ICameraSubState
             point.SetHighlightVisual(sphere);
         }
     }
-
-
 
     public void Exit()
     {
@@ -41,6 +42,7 @@ public class EditRoomPointsState : ICameraSubState
     public void OnTouchStart(Vector3 worldPos, Vector2 screenPos)
     {
         _selectedPoint = GetPointUnderTouch(worldPos);
+        _selectedPoint._activeSphere.GetComponent<MeshRenderer>().material.color = _highlightedColor;
     }
 
     public void OnTouchHold(Vector3 worldPos, Vector2 screenPos)
@@ -98,6 +100,7 @@ public class EditRoomPointsState : ICameraSubState
                 _selectedPoint.SetPosition(snappedPos);
             }
 
+            _selectedPoint._activeSphere.GetComponent<MeshRenderer>().material.color = Color.yellow;
             _selectedPoint = null;
         }
 

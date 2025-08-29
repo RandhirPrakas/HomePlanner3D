@@ -9,19 +9,28 @@ public class DrawRoomState : ICameraSubState
     private ProceduarlwallGenerator _wallGenerator;
     private LineRenderer _wallOutline;
     private Grid _grid;
+    private bool _isNewRoomMode;
+    private bool _roomLocked;
 
     // --- Tunables ---
     private const float CornerEpsilon = 0.001f; // tolerance for comparing Vector3 corners
 
     private Vector3 _snappedEnd;
 
-    public DrawRoomState(Room existingRoom = null)
+    public DrawRoomState(Room existingRoom = null, bool isNewRoom = false)
     {
+        _isNewRoomMode = isNewRoom;
 
         if (existingRoom != null)
+        {
             _currentRoom = existingRoom;
-        else
+            _roomLocked = true; 
+        }
+        else if (_isNewRoomMode)
+        {
             CreateNewRoom();
+            _roomLocked = true; // lock this room for all walls until state ends
+        }
     }
 
     public void Enter()
@@ -34,7 +43,6 @@ public class DrawRoomState : ICameraSubState
         if (_wallGenerator == null)
             _wallGenerator = new ProceduarlwallGenerator();
 
-        GameManager.Instance._uiManager.SetDrawButtonActive(false);
     }
 
     public void Exit()
@@ -99,6 +107,7 @@ public class DrawRoomState : ICameraSubState
         _wallOutline.SetPosition(1, worldPos + Vector3.up * AppHelper._lrYPos);
     }
 
+
     public void OnTouchEnd(Vector3 worldPos, Vector2 screenPos)
     {
         if (Vector3.Distance(_startPos, worldPos) < AppHelper._minimumWallLength)
@@ -140,10 +149,25 @@ public class DrawRoomState : ICameraSubState
 
         _snappedEnd.y = AppHelper._lrYPos;
 
-        // --- Decide target room(s) based on both endpoints ---
-        Room roomAtStart = FindRoomByPoint(_startPos);
-        Room roomAtEnd = FindRoomByPoint(_snappedEnd);
+        Room roomAtStart = null;
+        Room roomAtEnd = null;
 
+        // --- Handle New Room Mode ---
+        if (_isNewRoomMode)
+        {
+            if (_currentRoom == null || !_roomLocked)
+            {
+                CreateNewRoom();
+                _roomLocked = true; // lock so only one room is created in this mode
+            }
+        }
+        else
+        {
+            roomAtStart = FindRoomByPoint(_startPos);
+            roomAtEnd = FindRoomByPoint(_snappedEnd);
+        }
+
+        // --- Handle merging / assigning ---
         if (roomAtStart != null && roomAtEnd != null)
         {
             if (roomAtStart != roomAtEnd)
@@ -173,15 +197,16 @@ public class DrawRoomState : ICameraSubState
         {
             _currentRoom = roomAtEnd;
         }
-        else
+        else if (!_isNewRoomMode) // ✅ Only auto-create in normal mode
         {
             CreateNewRoom();
         }
 
+        // --- Ensure wall outline + draw ---
         EnsureWallOutlineForCurrentRoom();
-
         DrawSingleWall(_snappedEnd);
     }
+
 
 
     private void DrawSingleWall(Vector3 position)
@@ -330,7 +355,7 @@ public class DrawRoomState : ICameraSubState
             AddCornerUnique(intoRoom._wallCorners, c);
 
         if (_wallOutline != null && _wallOutline.gameObject == fromRoom.gameObject)
-    _wallOutline = null;
+            _wallOutline = null;
 
         RoomManager.Instance._allRooms.Remove(fromRoom);
         GameObject.Destroy(fromRoom.gameObject);

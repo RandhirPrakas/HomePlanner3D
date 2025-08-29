@@ -4,30 +4,49 @@ using System;
 [System.Serializable]
 public class CameraStateManager
 {
-    private CameraState currentCameraState;
+    private CameraState _currentCameraState;
+
+    private CameraState _perspectiveCamState = new PerspectiveState();
+    private CameraState _orthographicCamState = new OrthographicState();
 
     public void SetCameraState(CameraState newState)
     {
-        currentCameraState?.Exit();
-        currentCameraState = newState;
-        currentCameraState.Enter();
+        _currentCameraState?.Exit();
+        _currentCameraState = newState;
+        _currentCameraState.Enter();
     }
 
     public CameraState GetCurrentState()
     {
-        return currentCameraState;
+        return _currentCameraState;
     }
 
     public void Update()
     {
-        currentCameraState?.Update();
+        _currentCameraState?.Update();
+    }
+
+    public void SetPerspectiveState()
+    {
+        if (_currentCameraState == _perspectiveCamState)
+            return;
+        SetCameraState(_perspectiveCamState);
+    }
+
+    public void SetOrthographicState()
+    {
+        if (_currentCameraState == _orthographicCamState)
+            return;
+        SetCameraState(_orthographicCamState);
     }
 
     public void ToggleCamera()
     {
-        if (currentCameraState is OrthographicState)
-            SetCameraState(new PerspectiveState());
+        if (_currentCameraState is OrthographicState)
+            SetPerspectiveState();
         else
-            SetCameraState(new OrthographicState());
+            SetOrthographicState();
     }
+
+    
 }

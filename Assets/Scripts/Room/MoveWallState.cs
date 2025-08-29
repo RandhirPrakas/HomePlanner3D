@@ -7,6 +7,9 @@ public class MoveWallState : ICameraSubState
     private bool _isDragging = false;
 
     private Vector3 _direction;
+
+    private Color _defaultColor = Color.white;
+
     public MoveWallState(Wall wall)
     {
         SetActiveWall(wall);
@@ -20,13 +23,14 @@ public class MoveWallState : ICameraSubState
         Vector3 wallVector = _activeWall.GetEndPosition() - _activeWall.GetStartPosition();
         _direction = new Vector3(-wallVector.z, 0.1f, wallVector.x).normalized;
         Debug.Log($"Active wall set to {_activeWall.name}");
+        _defaultColor = _activeWall.GetComponent<LineRenderer>().material.color;
+        _activeWall.GetComponent<LineRenderer>().material.color = Color.blue;
     }
 
     public void Enter()
     {
         Debug.Log("Entered MoveWallState");
         _isDragging = false;
-        GameManager.Instance._uiManager.SetDrawButtonActive(false);
     }
 
     public void Exit()
@@ -66,6 +70,8 @@ public class MoveWallState : ICameraSubState
     public void OnTouchEnd(Vector3 worldPos, Vector2 screenPos)
     {
         _isDragging = false;
+
+        _activeWall.GetComponent<LineRenderer>().material.color = _defaultColor;
         _activeWall = null;
     }
 
@@ -73,11 +79,15 @@ public class MoveWallState : ICameraSubState
     {
         if (_activeWall == null) return;
 
-        _activeWall.StartWallPoint.transform.position += positionOffset;
-        _activeWall.StartWallPoint.SetPosition(_activeWall.StartWallPoint.transform.position);
+        Vector3 startPos = _activeWall.StartWallPoint.transform.position + positionOffset;
+        startPos.y = 0.1f;
+        _activeWall.StartWallPoint.transform.position = startPos;
+        _activeWall.StartWallPoint.SetPosition(startPos);
 
-        _activeWall.EndWallPoint.transform.position += positionOffset;
-        _activeWall.EndWallPoint.SetPosition(_activeWall.EndWallPoint.transform.position);
+        Vector3 endPos = _activeWall.EndWallPoint.transform.position + positionOffset;
+        endPos.y = 0.1f;
+        _activeWall.EndWallPoint.transform.position = endPos;
+        _activeWall.EndWallPoint.SetPosition(endPos);
 
         _activeWall.UpdateFromPoints();
     }

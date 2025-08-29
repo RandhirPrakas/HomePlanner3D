@@ -6,26 +6,28 @@ using UnityEngine.UI;
 public class UIManager : MonoBehaviour
 {
     [SerializeField] private Button _clearButton;
-
     [SerializeField] private Button _drawButton;
-
+    [SerializeField] private Button _toggleButton;
 
     private void Awake()
     {
-        _clearButton.onClick.AddListener(() => ResetSceneAndCreateNewRoom());
+
     }
 
     private void OnEnable()
     {
-        _drawButton.onClick.AddListener(() => GameManager.Instance.SetSubState(new DrawRoomState()));
+        _toggleButton.onClick.AddListener(() => ToggleCamerStates());
+        _clearButton.onClick.AddListener(() => ResetSceneAndCreateNewRoom());
+        _drawButton.onClick.AddListener(() => GameManager.Instance.SetSubState(new DrawRoomState(isNewRoom: true)));
     }
 
     private void OnDisable()
     {
         _drawButton.onClick.RemoveAllListeners();
+        _clearButton.onClick.RemoveAllListeners();
     }
 
-    public void ResetSceneAndCreateNewRoom()
+    private void ResetSceneAndCreateNewRoom()
     {
         foreach(WallPoint wp in WallPointManager.Instance._allWallPoints)
         {
@@ -38,11 +40,16 @@ public class UIManager : MonoBehaviour
             Destroy(room.gameObject);
         }
         RoomManager.Instance._allRooms.Clear();
-        GameManager.Instance.GetSubStateManager().SetIdleState();
+        GameManager.Instance.GetSubStateManager().SetOrthoIdleState();
     }
 
     public void SetDrawButtonActive(bool val)
     {
         _drawButton.gameObject.SetActive(val);
+    }
+
+    private void ToggleCamerStates()
+    {
+        GameManager.Instance.GetCameraStateManager().ToggleCamera();
     }
 }

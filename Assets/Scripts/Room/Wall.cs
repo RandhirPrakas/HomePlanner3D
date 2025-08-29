@@ -168,33 +168,35 @@ public class Wall : MonoBehaviour
         _parentRoom?.UpdateFloorOnEditingPoints();
     }
 
+
     private void UpdateLabel(Vector3 start, Vector3 end)
     {
         if (_labelText == null || _labelRect == null)
             return;
 
-        Vector3 center = (start + end) / 2f;
+        Vector3 center = (start + end) * 0.5f;
         Vector3 direction = (end - start).normalized;
 
-        // Set position
         _labelRect.position = center + Vector3.up * 0.1f;
 
-        // Set rotation
         float angle = Mathf.Atan2(direction.z, direction.x) * Mathf.Rad2Deg;
+        Quaternion rot = Quaternion.Euler(90f, 0f, -angle);
 
-        if (angle > 90 || angle < -90)
-            angle += 180;
+        Vector3 rightSide = new Vector3(direction.z, 0, -direction.x);
 
-        _labelRect.rotation = Quaternion.Euler(90f, 0f, -angle);
+        Vector3 labelUp = rot * Vector3.up;
+        if (Vector3.Dot(labelUp, rightSide) < 0)
+        {
+            rot *= Quaternion.Euler(0f, 0f, 180f);
+        }
 
-        // Not working
-        // SetSize (So World Space matchses with wall length) 
-        float height = 0f; // fixed height in world units
-        _labelRect.sizeDelta = new Vector2(_wallLength, height);
+        _labelRect.rotation = rot;
 
-        // Set text
-        _labelText.text = (_wallLength).ToString("F2") + " ft";
+        _labelRect.sizeDelta = new Vector2(_wallLength, _labelRect.sizeDelta.y);
+
+        _labelText.text = _wallLength.ToString("F2") + " ft";
     }
+
 
     private void UpdateCollider(Vector3 start, Vector3 end)
     {
