@@ -81,15 +81,15 @@ public class Wall : MonoBehaviour
     #endregion
 
 
-    public void SetStartAndEndPosition(WallPoint startPosition, WallPoint endPosition, Room room)
+    public void SetStartAndEndPosition(WallPoint startPosition, WallPoint endPosition, Room room = null)
     {
         this._startWallPoint = startPosition;
         this._endWallPoint = endPosition;
-        this._parentRoom = room;
+        if(room != null)
+            this._parentRoom = room;
 
         InitLineRenderer();
         EnsureColliderGO();
-        InitLabel();
         UpdateFromPoints();
     }
 
@@ -111,45 +111,6 @@ public class Wall : MonoBehaviour
     }
 
 
-    private void InitLabel()
-    {
-        if (_labelText != null)
-            return;
-
-        // Use the parent room's canvas instead of global Find
-        if (_canvasGO == null && _parentRoom != null)
-        {
-            if (_parentRoom._roomCanvas == null)
-            {
-                _parentRoom.SpawnWallLabelCanvas();
-            }
-            _canvasGO = _parentRoom._roomCanvas.gameObject;
-        }
-
-        if (_canvasGO == null)
-        {
-            Debug.LogWarning("No room canvas found for this wall.");
-            return;
-        }
-
-        GameObject labelPrefab = Resources.Load<GameObject>("Prefabs/WallLabelPrefab");
-        if (labelPrefab == null)
-        {
-            Debug.LogError("WallLabelPrefab not found in Resources.");
-            return;
-        }
-
-        // Instantiate prefab into this room's canvas
-        _labelGO = Instantiate(labelPrefab, _canvasGO.transform);
-        _labelGO.transform.localRotation = Quaternion.identity;
-
-        _labelText = _labelGO.GetComponentInChildren<TMPro.TMP_Text>();
-        _labelRect = _labelGO.GetComponent<RectTransform>();
-    }
-
-
-
-
     public void UpdateFromPoints()
     {
         if (_startWallPoint == null || _endWallPoint == null || _lineRenderer == null)
@@ -165,7 +126,6 @@ public class Wall : MonoBehaviour
         UpdateLabel(start, end);
         UpdateCollider(start, end);
 
-        _parentRoom?.UpdateFloorOnEditingPoints();
     }
 
 
@@ -221,10 +181,6 @@ public class Wall : MonoBehaviour
 
     }
 
-    public Room GetCurrentRoom()
-    {
-        return _parentRoom;
-    }
 
     public void DestroyLabel()
     {
@@ -249,5 +205,33 @@ public class Wall : MonoBehaviour
         _colliderGO.transform.SetParent(transform, false); 
         _boxCollider = _colliderGO.AddComponent<BoxCollider>();
         _boxCollider.size = new Vector3(1, _boxCollider.size.y, _boxCollider.size.z);
+    }
+
+    public void DeleteWall()
+    {
+        if (_startWallPoint != null)
+        {
+            _startWallPoint.RemoveConnectedWall(this);
+            _startWallPoint.RemoveConnectedWallPoint(_endWallPoint);
+        }
+
+        if (_endWallPoint != null)
+        {
+            _endWallPoint.RemoveConnectedWall(this);
+            _endWallPoint.RemoveConnectedWallPoint(_startWallPoint);
+        }
+
+        if (WallManager.Instance._allWalls.Contains(this))
+        {
+            WallManager.Instance._allWalls.Remove(this);
+        }
+
+        /*if (_parentRoom != null)
+        {
+            _parentRoom.RemoveWall(this); 
+        }*/
+
+        WallManager._wallIndex--;
+        Destroy(gameObject);
     }
 }

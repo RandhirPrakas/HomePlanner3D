@@ -7,14 +7,24 @@ public class PerspectiveState : CameraState
     {
         Camera.main.orthographic = false;
         GameManager.Instance.GetSubStateManager().SetPerspIdleState();
-        GenerateWalls();
-        HideLineRenderersAndCanvas();
+        //GenerateWalls();
         SetCameraOrientation();
     }
 
     public override void Exit()
     {
         Debug.Log("Exiting Perspective Mode");
+    }
+
+  
+
+  
+    private void SetCameraOrientation()
+    {
+        Camera.main.transform.position = new Vector3(0, 25, -25);
+        Camera.main.transform.rotation = Quaternion.Euler(45, 0, 0);
+        Camera.main.fieldOfView = 45;
+
     }
 
     public void GenerateWalls()
@@ -26,31 +36,11 @@ public class PerspectiveState : CameraState
 
         foreach (Room room in RoomManager.Instance._allRooms)
         {
-            for (int i = 0; i < room._allRoomWalls.Count; i++)
+            for (int i = 0; i < room._roomWalls.Count; i++)
             {
-                Wall wall = room._allRoomWalls[i];
+                Wall wall = room._roomWalls[i];
                 _wallGenerator.MapAllRequiredPoints(wall.GetStartPosition(), wall.GetEndPosition(), wall.gameObject.transform);
             }
         }
-    }
-
-    private void HideLineRenderersAndCanvas()
-    {
-        foreach(Room room in RoomManager.Instance._allRooms)
-        {
-            room._roomCanvas.gameObject.SetActive(false);
-            foreach(Wall wall in room._allRoomWalls)
-            {
-                wall.GetComponent<LineRenderer>().enabled = false;
-            }
-        }
-    }
-
-    private void SetCameraOrientation()
-    {
-        Camera.main.transform.position = new Vector3(0, 25, -25);
-        Camera.main.transform.rotation = Quaternion.Euler(45, 0, 0);
-        Camera.main.fieldOfView = 45;
-
     }
 }

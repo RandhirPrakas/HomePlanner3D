@@ -135,7 +135,7 @@ public class AddDoorState : ICameraSubState
 
         foreach (Room room in RoomManager.Instance._allRooms)
         {
-            if (room == null || room._allRoomWalls == null) continue;
+           /* if (room == null || room._allRoomWalls == null) continue;
 
             foreach (Wall wall in room._allRoomWalls)
             {
@@ -155,7 +155,7 @@ public class AddDoorState : ICameraSubState
                     nearest = wall;
                     closestPoint = proj;
                 }
-            }
+            }*/
         }
 
         if (minDist > snapThreshold) nearest = null;

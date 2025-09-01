@@ -30,7 +30,7 @@ public class WallPointManager : MonoBehaviour
             
         }
 
-        GameObject pointGO = new GameObject(string.IsNullOrEmpty(name) ? "WallPoint" : name);
+        GameObject pointGO = new GameObject(string.IsNullOrEmpty(name) ? $"WallPoint_{RoomManager.WallPointCountIndex++}" : name);
         WallPoint wallPoint = pointGO.AddComponent<WallPoint>();
         wallPoint.Initialize(position);
         _allWallPoints.Add(wallPoint);
@@ -55,29 +55,7 @@ public class WallPointManager : MonoBehaviour
         return null;
     }
 
-    public Wall DetectWallHit(Vector3 position, float tolerance = 0.1f)
-    {
-        foreach (Wall wall in RoomManager.Instance._activeRoom._allRoomWalls)
-        {
-            Vector3 a = wall.GetStartPosition();
-            Vector3 b = wall.GetEndPosition();
-
-            // project point onto segment
-            Vector3 ab = b - a;
-            Vector3 ap = position - a;
-            float t = Mathf.Clamp01(Vector3.Dot(ap, ab) / ab.sqrMagnitude);
-            Vector3 closest = a + t * ab;
-
-            float dist = Vector3.Distance(position, closest);
-
-            // close enough AND not too close to endpoints
-            if (dist < tolerance && t > 0.05f && t < 0.95f)
-            {
-                return wall;
-            }
-        }
-        return null;
-    }
+  
 
     public List<WallPoint> SortClockwiseFromOrigin()
     {

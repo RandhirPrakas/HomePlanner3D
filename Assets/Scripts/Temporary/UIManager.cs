@@ -18,7 +18,7 @@ public class UIManager : MonoBehaviour
     {
         _toggleButton.onClick.AddListener(() => ToggleCamerStates());
         _clearButton.onClick.AddListener(() => ResetSceneAndCreateNewRoom());
-        _drawButton.onClick.AddListener(() => GameManager.Instance.SetSubState(new DrawRoomState(isNewRoom: true)));
+        _drawButton.onClick.AddListener(() => GameManager.Instance.SetSubState(new DrawState()));
     }
 
     private void OnDisable()

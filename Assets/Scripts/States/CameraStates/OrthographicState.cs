@@ -8,7 +8,7 @@ public class OrthographicState : CameraState
         Debug.Log("Switched to Orthographic Mode");
         Camera.main.orthographic = true;
         SetCameraOrientation();
-        RemoveWallMeshes();
+        //RemoveWallMeshes();
         ShowLineRendereAndCanvas();
         GameManager.Instance.GetSubStateManager().SetOrthoIdleState();
     }
@@ -22,18 +22,15 @@ public class OrthographicState : CameraState
     {
         foreach (Room room in RoomManager.Instance._allRooms)
         {
-            room._roomCanvas.gameObject.SetActive(true);
-            foreach (Wall wall in room._allRoomWalls)
-            {
-                wall.GetComponent<LineRenderer>().enabled = true;
-            }
+           
         }
     }
+    
     private void RemoveWallMeshes()
     {
-        foreach(Room room in RoomManager.Instance._allRooms)
+        foreach (Room room in RoomManager.Instance._allRooms)
         {
-            foreach(Wall wall in room._allRoomWalls)
+            foreach (Wall wall in room._roomWalls)
             {
                 GameObject.Destroy(wall.GetComponent<MeshRenderer>());
                 GameObject.Destroy(wall.GetComponent<MeshFilter>());

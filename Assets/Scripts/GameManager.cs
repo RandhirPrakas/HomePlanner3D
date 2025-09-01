@@ -76,42 +76,13 @@ public class GameManager : MonoBehaviour
             }
         }
 
-        // D KEY: Enter DrawRoomState from Idle
-        if (Input.GetKeyDown(KeyCode.D))
-        {
-            if (GetSubState()?.GetType() == typeof(Ortho_IdleState))
-            {
-                // Start a new room or get the most recent one
-                Room room = (RoomManager.Instance._allRooms == null || RoomManager.Instance._allRooms.Count == 0) ? null : RoomManager.Instance._activeRoom;
-                SetSubState(new DrawRoomState(room));
-            }
-        }
-
+       
         // E KEY: Enter EditRoomPointsState from Idle
         if (Input.GetKeyDown(KeyCode.E))
         {
             if (GetSubState()?.GetType() == typeof(Ortho_IdleState))
             {
                 SetSubState(new EditRoomPointsState());
-            }
-        }
-
-        // A KEY: Enter AddDoorState from Idle
-        if (Input.GetKeyDown(KeyCode.A))
-        {
-            if (GetSubState()?.GetType() == typeof(Ortho_IdleState))
-            {
-                // Note: This requires a better system for selecting a wall.
-                // For now, it just grabs the first available wall for testing.
-                if (RoomManager.Instance._allRooms.Count > 0 && RoomManager.Instance._allRooms[0]._allRoomWalls.Count > 0)
-                {
-                    Wall wall = RoomManager.Instance._allRooms[0]._allRoomWalls[0];
-                    SetSubState(new AddDoorState(wall));
-                }
-                else
-                {
-                    Debug.LogWarning("Cannot enter AddDoorState. No walls exist to add a door to!");
-                }
             }
         }
 

@@ -62,9 +62,15 @@ public class EditRoomPointsState : ICameraSubState
            
             snappedPosition += Vector3.up * AppHelper._lrYPos;
 
-            
             _selectedPoint.SetPosition(snappedPosition);
         }
+
+        // To Move the wall accordingly
+        // Issue occurs after merging
+        /*foreach(Wall wall in _selectedPoint.GetConnectedWalls())
+        {
+            wall.UpdateFromPoints();
+        }*/
     }
 
     public void OnTouchEnd(Vector3 worldPos, Vector2 screenPos)
@@ -80,20 +86,6 @@ public class EditRoomPointsState : ICameraSubState
             if (target != null)
             {
                 _selectedPoint.MergeWith(target);
-                HashSet<Room> affectedRooms = target.GetParentRooms();
-
-                foreach (Room room in affectedRooms)
-                {
-                    //room._allRoomWalls.RemoveAll(w => w == null);
-                    room.CleanUpNullWalls();
-
-                    foreach (var wall in room._allRoomWalls)
-                    {
-                        wall.UpdateFromPoints();
-                    }
-
-                    room.UpdateFloorOnEditingPoints();
-                }
             }
             else
             {
@@ -103,10 +95,7 @@ public class EditRoomPointsState : ICameraSubState
             _selectedPoint._activeSphere.GetComponent<MeshRenderer>().material.color = Color.yellow;
             _selectedPoint = null;
         }
-
-
     }
-
 
     private WallPoint GetPointUnderTouch(Vector3 position)
     {

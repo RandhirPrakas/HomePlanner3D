@@ -3,14 +3,12 @@ using UnityEngine.EventSystems;
 
 public class TouchManager : MonoBehaviour
 {
-    [SerializeField] private float testZpos = 0f;
-
     private Vector2 _initialTouchPosition, _currentTouchPosition;
     private float _initialTouchTime, _currentTouchTime;
 
     private bool _isDragging = false;
     private float _tapThresholdTime = 0.3f;
-    private float _dragThreshold = 5f; // pixels before we consider it a drag
+    private float _dragThreshold = 5f;
 
     private void Update()
     {
