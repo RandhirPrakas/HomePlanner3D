@@ -6,10 +6,18 @@ public class EditWindowState : ICameraSubState
     private Window _selectedWindow;
     private GameObject _highlightParent;
 
+    private OrthoCam _orthoCam;
+
+    public EditWindowState(OrthoCam orthoCam)
+    {
+        _orthoCam = (orthoCam == null) ? GameManager.Instance.GetOrthoCamera() : orthoCam;
+    }
+
     public void Enter()
     {
         Debug.Log("Entered EditWindowState");
         _highlightParent = new GameObject("WindowHighlights");
+        
     }
 
     public void Exit()
@@ -131,4 +139,10 @@ public class EditWindowState : ICameraSubState
         if (minDist > snapThreshold) nearest = null;
         return nearest;
     }
+
+    public void OnPinch(float delta)
+    {
+        _orthoCam.ZoomCamera(delta);
+    }
+
 }

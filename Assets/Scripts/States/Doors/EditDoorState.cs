@@ -5,6 +5,12 @@ public class EditDoorState : ICameraSubState
 {
     private Door _selectedDoor;
     private GameObject _highlightParent;
+    private OrthoCam _orthoCam;
+    
+    public EditDoorState(OrthoCam orthoCam)
+    {
+        _orthoCam = (orthoCam == null) ? GameManager.Instance.GetOrthoCamera() : orthoCam;
+    }
 
     public void Enter()
     {
@@ -137,4 +143,8 @@ public class EditDoorState : ICameraSubState
         return nearest;
     }
 
+    public void OnPinch(float delta)
+    {
+        _orthoCam.ZoomCamera(delta);
+    }
 }

@@ -19,6 +19,11 @@ public class Persp_IdleState : ICameraSubState
         //throw new System.NotImplementedException();
     }
 
+    public void OnPinch(float delta)
+    {
+        throw new System.NotImplementedException();
+    }
+
     public void OnTouchEnd(Vector3 worldPos, Vector2 screenPos)
     {
         //throw new System.NotImplementedException();

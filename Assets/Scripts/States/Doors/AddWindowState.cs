@@ -6,9 +6,12 @@ public class AddWindowState : ICameraSubState
     private GameObject _dotPreview;
     private GameObject _dotPrefab;
 
-    public AddWindowState()
+    private OrthoCam _orthoCam;
+
+    public AddWindowState(OrthoCam orthoCam)
     {
         _dotPrefab = Resources.Load<GameObject>("Prefabs/WindowDotPrefab");
+        _orthoCam = orthoCam;
     }
 
     public void Enter()
@@ -22,7 +25,7 @@ public class AddWindowState : ICameraSubState
             if (_targetWall == null)
             {
                 Debug.LogWarning("No walls exist in the scene. Exiting to IdleState.");
-                GameManager.Instance.SetSubState(new Ortho_IdleState());
+                GameManager.Instance.SetSubState(new Ortho_IdleState(GameManager.Instance.GetOrthoCamera()));
                 return;
             }
         }
@@ -116,7 +119,7 @@ public class AddWindowState : ICameraSubState
             Debug.Log($"Window opening placed on {nearestWall.name} at {finalPos}");
         }
 
-        GameManager.Instance.GetSubStateManager().SetSubState(new Ortho_IdleState());
+        GameManager.Instance.GetSubStateManager().SetSubState(new Ortho_IdleState(GameManager.Instance.GetOrthoCamera()));
     }
 
     private Wall FindNearestWall(Vector3 point, out Vector3 closestPoint, float snapThreshold = 5f)
@@ -193,5 +196,10 @@ public class AddWindowState : ICameraSubState
         window.Initialize(wall, finalPos);
 
         Debug.Log($"Window opening automatically placed on {wall.name} at {finalPos}");
+    }
+
+    public void OnPinch(float delta)
+    {
+        _orthoCam.ZoomCamera(delta);
     }
 }

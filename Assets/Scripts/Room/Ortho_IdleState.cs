@@ -4,6 +4,11 @@ public class Ortho_IdleState : ICameraSubState
 {
     OrthoCam _orthoCam;
 
+    public Ortho_IdleState(OrthoCam orthoCam)
+    {
+        _orthoCam = orthoCam;
+    }
+
     public void Enter()
     {
         Debug.Log("Entered IdleState");
@@ -13,7 +18,7 @@ public class Ortho_IdleState : ICameraSubState
 
     public void Exit()
     {
-        GameManager.Instance._uiManager.SetDrawButtonActive(false);
+        
     }
 
     public void Init(Vector3 worldPos, Vector2 screenPos)
@@ -23,7 +28,7 @@ public class Ortho_IdleState : ICameraSubState
 
     public void OnTouchEnd(Vector3 worldPos, Vector2 screenPos)
     {
-        throw new System.NotImplementedException();
+
     }
 
     public void OnTouchHold(Vector3 worldPos, Vector2 screenPos)
@@ -38,8 +43,13 @@ public class Ortho_IdleState : ICameraSubState
         _orthoCam.SetInitialTouchPosition(screenPos);
     }
 
+    public void OnPinch(float delta)
+    {
+        _orthoCam.ZoomCamera(delta);
+    }
+
     public void Update()
     {
-        //throw new System.NotImplementedException();
+        // Idle update logic if needed
     }
 }

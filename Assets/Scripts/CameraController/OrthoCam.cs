@@ -1,13 +1,14 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class OrthoCam : CameraManager
 {
     private Vector2 _initialScreenTouchPos;
 
-    #region 
+    [SerializeField] private float _zoomSpeed = 5f;// default 5
+    [SerializeField] private float _minOrthoSize = 2f;
+    [SerializeField] private float _maxOrthoSize = 50f;
 
+    #region Get/Set Touch Position
     public Vector2 GetInitialScreenTouchPosition()
     {
         return _initialScreenTouchPos;
@@ -17,7 +18,6 @@ public class OrthoCam : CameraManager
     {
         _initialScreenTouchPos = position;
     }
-
     #endregion
 
     public void MoveCameraByDistance(Vector3 distance)
@@ -29,5 +29,13 @@ public class OrthoCam : CameraManager
     {
         Vector2 distance = (_initialScreenTouchPos - finalPosition).normalized;
         return new Vector3(distance.x, 0, distance.y);
+    }
+
+    public void ZoomCamera(float deltaMagnitudeDiff)
+    {
+        if (_mainCamera == null || !_mainCamera.orthographic) return;
+
+        _mainCamera.orthographicSize -= deltaMagnitudeDiff * _zoomSpeed * Time.deltaTime;
+        _mainCamera.orthographicSize = Mathf.Clamp(_mainCamera.orthographicSize, _minOrthoSize, _maxOrthoSize);
     }
 }

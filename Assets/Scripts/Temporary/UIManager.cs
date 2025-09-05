@@ -9,6 +9,7 @@ public class UIManager : MonoBehaviour
     [SerializeField] private Button _drawButton;
     [SerializeField] private Button _toggleButton;
     [SerializeField] private Button _addDoorButton;
+    [SerializeField] private Button _addWindowButton;
 
     private void Awake()
     {
@@ -19,8 +20,9 @@ public class UIManager : MonoBehaviour
     {
         _toggleButton.onClick.AddListener(() => ToggleCamerStates());
         _clearButton.onClick.AddListener(() => ResetSceneAndCreateNewRoom());
-        _drawButton.onClick.AddListener(() => GameManager.Instance.SetSubState(new DrawState()));
-        _addDoorButton.onClick.AddListener(() => GameManager.Instance.SetSubState(new AddDoorState()));
+        _drawButton.onClick.AddListener(() => GameManager.Instance.SetSubState(new DrawState(GameManager.Instance.GetOrthoCamera())));
+        _addDoorButton.onClick.AddListener(() => GameManager.Instance.SetSubState(new AddDoorState(GameManager.Instance.GetOrthoCamera())));
+        _addWindowButton.onClick.AddListener(() => GameManager.Instance.SetSubState(new AddWindowState(GameManager.Instance.GetOrthoCamera())));
     }
 
     private void OnDisable()

@@ -54,39 +54,19 @@ public class GameManager : MonoBehaviour
             Destroy(gameObject);
         }
 
-        Initialize();
+        
     }
 
     private void Start()
     {
         _subStateManager.Start();
+        Initialize();
     }
 
     private void Update()
     {
         _cameraStateManager.Update();
         _subStateManager.Update();
-
-        // --- New Hotkey System ---
-
-        // ESCAPE KEY: Universal exit to IdleState
-        if (Input.GetKeyDown(KeyCode.Escape))
-        {
-            if (GetSubState()?.GetType() != typeof(Ortho_IdleState))
-            {
-                SetSubState(new Ortho_IdleState());
-            }
-        }
-
-       
-        // E KEY: Enter EditRoomPointsState from Idle
-        if (Input.GetKeyDown(KeyCode.E))
-        {
-            if (GetSubState()?.GetType() == typeof(Ortho_IdleState))
-            {
-                SetSubState(new EditRoomPointsState());
-            }
-        }
     }
 
     private void Initialize()

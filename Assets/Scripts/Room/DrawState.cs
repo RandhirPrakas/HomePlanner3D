@@ -3,6 +3,7 @@ using UnityEngine;
 
 public class DrawState : ICameraSubState
 {
+    private OrthoCam _orthoCam;
     private Vector3 _startPos;
     private Vector3 _snappedEnd;
 
@@ -11,11 +12,14 @@ public class DrawState : ICameraSubState
     private Transform _strandedWalls;
 
     private Wall _firstNearestWall, _secondNearestWall;
-    public DrawState()
+    public DrawState(OrthoCam orthocam)
     {
         Debug.Log("Draw State Initialized");
+
+        _orthoCam = orthocam;
         _strandedWalls = GameObject.Find("StrandedWalls").transform;
     }
+
     public void Enter()
     {
         Debug.Log("Entered Draw State ");
@@ -24,6 +28,8 @@ public class DrawState : ICameraSubState
 
         _firstNearestWall = null;
         _secondNearestWall = null;
+
+        GameManager.Instance._uiManager.SetDrawButtonActive(false);
     }
 
     public void Exit()
@@ -74,9 +80,15 @@ public class DrawState : ICameraSubState
 
     public void OnTouchEnd(Vector3 worldPos, Vector2 screenPos)
     {
+        if (_startPos == Vector3.zero)
+        {
+            Debug.LogWarning("OnTouchEnd called but startPos not set!");
+            return;
+        }
+
         if (Vector3.Distance(_startPos, worldPos) < AppHelper._minimumWallLength)
         {
-            Debug.Log("Not Enough Points");
+            Debug.Log("Not Enough Distance");
             return;
         }
 
@@ -156,5 +168,10 @@ public class DrawState : ICameraSubState
         }
 
         return snappedPosition;
+    }
+
+    public void OnPinch(float delta)
+    {
+        _orthoCam.ZoomCamera(delta);
     }
 }

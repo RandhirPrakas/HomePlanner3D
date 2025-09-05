@@ -9,10 +9,13 @@ public class MoveWallState : ICameraSubState
     private Vector3 _direction;
 
     private Color _defaultColor = Color.white;
+    private OrthoCam _orthoCam;
 
-    public MoveWallState(Wall wall)
+    public MoveWallState(Wall wall, OrthoCam orthoCam)
     {
         SetActiveWall(wall);
+
+        _orthoCam = (orthoCam == null) ? GameManager.Instance.GetOrthoCamera() : orthoCam;
     }
 
     public void SetActiveWall(Wall wall)
@@ -114,5 +117,10 @@ public class MoveWallState : ICameraSubState
                 }
             }
         }
+    }
+
+    public void OnPinch(float delta)
+    {
+        _orthoCam.ZoomCamera(delta);
     }
 }

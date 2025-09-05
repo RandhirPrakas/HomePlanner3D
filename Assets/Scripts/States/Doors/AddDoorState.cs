@@ -8,9 +8,12 @@ public class AddDoorState : ICameraSubState
     private float _tOnWall;
     private GameObject _dotPrefab;
 
-    public AddDoorState()
+    private OrthoCam _orthoCam;
+
+    public AddDoorState(OrthoCam orthoCam)
     {
         _dotPrefab = Resources.Load<GameObject>("Prefabs/DoorDotPrefab");
+        _orthoCam = orthoCam;
     }
 
     public void Enter()
@@ -24,7 +27,7 @@ public class AddDoorState : ICameraSubState
             if (_targetWall == null)
             {
                 Debug.LogWarning("No walls exist in the scene. Exiting to IdleState.");
-                GameManager.Instance.SetSubState(new Ortho_IdleState());
+                GameManager.Instance.SetSubState(new Ortho_IdleState(GameManager.Instance.GetOrthoCamera()));
                 return;
             }
         }
@@ -118,7 +121,7 @@ public class AddDoorState : ICameraSubState
         }
 
         // Switch back to the safe IdleState
-        GameManager.Instance.GetSubStateManager().SetSubState(new Ortho_IdleState());
+        GameManager.Instance.GetSubStateManager().SetSubState(new Ortho_IdleState(GameManager.Instance.GetOrthoCamera()));
     }
 
 
@@ -202,4 +205,8 @@ public class AddDoorState : ICameraSubState
         Debug.Log($"Door opening automatically placed on {wall.name} at {position}");
     }
 
+    public void OnPinch(float delta)
+    {
+        _orthoCam.ZoomCamera(delta);
+    }
 }

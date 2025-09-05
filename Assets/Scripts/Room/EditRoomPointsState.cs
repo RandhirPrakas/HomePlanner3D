@@ -5,6 +5,12 @@ public class EditRoomPointsState : ICameraSubState
 {
     private WallPoint _selectedPoint;
     private GameObject _highlightParent;
+    private OrthoCam _orthoCam;
+
+    public EditRoomPointsState(OrthoCam orthoCam)
+    {
+        _orthoCam = (orthoCam == null) ? GameManager.Instance.GetOrthoCamera() : orthoCam;
+    }
 
     private readonly Color _highlightedColor = new Color(136, 91, 255, 255);
     public void Enter()
@@ -146,4 +152,8 @@ public class EditRoomPointsState : ICameraSubState
         throw new System.NotImplementedException();
     }
 
+    public void OnPinch(float delta)
+    {
+        _orthoCam.ZoomCamera(delta);
+    }
 }
