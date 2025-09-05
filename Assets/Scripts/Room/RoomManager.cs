@@ -28,7 +28,4 @@ public class RoomManager : MonoBehaviour
         _activeRoom = room;
     }
 
-
-
-
 }

@@ -28,7 +28,7 @@ public class RoomDetector : MonoBehaviour
 
         foreach(Room room in RoomManager.Instance._allRooms)
         {
-            Destroy(room.gameObject);
+            room.RemoveRoom();
         }
         RoomManager.Instance._allRooms.Clear();
 
@@ -49,6 +49,7 @@ public class RoomDetector : MonoBehaviour
         Room roomComp = roomGO.AddComponent<Room>();
         roomComp.Initialize(cyclePoints);
         RoomManager.Instance._allRooms.Add(roomComp);
+
 
         // Parent for organization
         roomGO.transform.SetParent(this.transform);

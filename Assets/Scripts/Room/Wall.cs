@@ -14,7 +14,7 @@ public class Wall : MonoBehaviour
     [SerializeField] private GameObject _canvasGO;
     [SerializeField] private Room _parentRoom;
 
-    private LineRenderer _lineRenderer;
+    public LineRenderer _lineRenderer;
 
     private GameObject _labelGO;
     private TMP_Text _labelText;
@@ -22,7 +22,7 @@ public class Wall : MonoBehaviour
 
     // Colliders
     [SerializeField] private GameObject _colliderGO;
-    [SerializeField] private BoxCollider _boxCollider;
+    public BoxCollider _boxCollider;
 
     #region Public Properties
     public WallPoint StartWallPoint { get => _startWallPoint; set => _startWallPoint = value; }
@@ -85,12 +85,16 @@ public class Wall : MonoBehaviour
     {
         this._startWallPoint = startPosition;
         this._endWallPoint = endPosition;
+
+
         if(room != null)
             this._parentRoom = room;
 
+        startPosition.SetPosition(startPosition._position);
+
         InitLineRenderer();
         EnsureColliderGO();
-        UpdateFromPoints();
+        UpdateFromPoints(true);
     }
 
     private void InitLineRenderer()
@@ -106,28 +110,44 @@ public class Wall : MonoBehaviour
         _lineRenderer.material = Resources.Load<Material>("ProceduralMaterials/DefaultLRmaterial");
         _lineRenderer.startWidth = AppHelper._lrThickness;
         _lineRenderer.endWidth = AppHelper._lrThickness;
-        _lineRenderer.SetPosition(0, _startWallPoint._position);
-        _lineRenderer.SetPosition(1, _endWallPoint._position);
+
+        _lineRenderer.SetPosition(0, new Vector3(_startWallPoint._position.x, 0.5f, _startWallPoint._position.z));
+        _lineRenderer.SetPosition(1, new Vector3(_endWallPoint._position.x, 0.5f, _endWallPoint._position.z));
     }
 
-
-    public void UpdateFromPoints()
+    private bool _isUpdating = false;
+    public void UpdateFromPoints(bool isUpdatingPoint = false)
     {
-        if (_startWallPoint == null || _endWallPoint == null || _lineRenderer == null)
-            return;
+        if (_isUpdating) return;   // prevent recursion
+        _isUpdating = true;
 
-        Vector3 start = _startWallPoint._position;
-        Vector3 end = _endWallPoint._position;
+        try
+        {
+            if (_startWallPoint == null || _endWallPoint == null || _lineRenderer == null)
+                return;
 
-        _lineRenderer.SetPosition(0, start);
-        _lineRenderer.SetPosition(1, end);
+            Vector3 start = _startWallPoint._position;
+            Vector3 end = _endWallPoint._position;
 
-        _wallLength = Vector3.Distance(start, end);
-        UpdateLabel(start, end);
-        UpdateCollider(start, end);
+            start.y = 0.5f;
+            end.y = 0.5f;
 
+            _lineRenderer.SetPosition(0, start);
+            _lineRenderer.SetPosition(1, end);
+
+            _wallLength = Vector3.Distance(start, end);
+            UpdateLabel(start, end);
+            UpdateCollider(start, end);
+            UpdateRoom();
+            if(!isUpdatingPoint)
+                UpdateConenctedWalls();
+        }
+        finally
+        {
+            // always reset even if an exception happens
+            _isUpdating = false;
+        }
     }
-
 
     private void UpdateLabel(Vector3 start, Vector3 end)
     {
@@ -207,29 +227,41 @@ public class Wall : MonoBehaviour
         _boxCollider.size = new Vector3(1, _boxCollider.size.y, _boxCollider.size.z);
     }
 
-    public void DeleteWall()
+    private void UpdateConenctedWalls()
     {
-        if (_startWallPoint != null)
+        foreach(Wall wall in _startWallPoint.GetConnectedWalls())
         {
-            _startWallPoint.RemoveConnectedWall(this);
-            _startWallPoint.RemoveConnectedWallPoint(_endWallPoint);
+            if (wall == this)
+                continue;
+            wall.UpdateFromPoints();
+        }
+    }
+
+    private void UpdateRoom()
+    {
+        if(_startWallPoint.GetConnectedRooms().Count == 0 || _endWallPoint.GetConnectedRooms().Count == 0)
+        {
+            return;
         }
 
-        if (_endWallPoint != null)
+        foreach(Room room in _startWallPoint.GetConnectedRooms())
         {
-            _endWallPoint.RemoveConnectedWall(this);
-            _endWallPoint.RemoveConnectedWallPoint(_startWallPoint);
+            room.UpdateFloor();
         }
+
+        foreach (Room room in _endWallPoint.GetConnectedRooms())
+        {
+            room.UpdateFloor();
+        }
+    }
+
+    public void DeleteWall()
+    {
 
         if (WallManager.Instance._allWalls.Contains(this))
         {
             WallManager.Instance._allWalls.Remove(this);
         }
-
-        /*if (_parentRoom != null)
-        {
-            _parentRoom.RemoveWall(this); 
-        }*/
 
         WallManager._wallIndex--;
         Destroy(gameObject);

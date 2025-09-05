@@ -34,6 +34,7 @@ public class WallPointManager : MonoBehaviour
         WallPoint wallPoint = pointGO.AddComponent<WallPoint>();
         wallPoint.Initialize(position);
         _allWallPoints.Add(wallPoint);
+        wallPoint.transform.SetParent(this.transform);
 
         _allWallPoints = SortClockwiseFromOrigin();
 

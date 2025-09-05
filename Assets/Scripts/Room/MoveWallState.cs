@@ -71,8 +71,11 @@ public class MoveWallState : ICameraSubState
     {
         _isDragging = false;
 
-        _activeWall.GetComponent<LineRenderer>().material.color = _defaultColor;
-        _activeWall = null;
+        if (_activeWall != null)
+        {
+            _activeWall.GetComponent<LineRenderer>().material.color = _defaultColor;
+            _activeWall = null;
+        }
     }
 
     private void MoveWall(Vector3 positionOffset)

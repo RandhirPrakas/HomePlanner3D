@@ -7,6 +7,8 @@ TagManager:
   - Ground
   - Floor
   - Wall
+  - Door
+  - Window
   layers:
   - Default
   - TransparentFX

@@ -3,38 +3,31 @@ using UnityEngine;
 
 public class OrthographicState : CameraState
 {
+    public OrthoCam _orthoCam;
     public override void Enter()
     {
+
+        _orthoCam = GameManager.Instance.GetOrthoCamera();
+
         Debug.Log("Switched to Orthographic Mode");
         Camera.main.orthographic = true;
         SetCameraOrientation();
-        //RemoveWallMeshes();
-        ShowLineRendereAndCanvas();
+        RemoveWallMeshes();
+        ShowGameobjectsFromOrthoState();
         GameManager.Instance.GetSubStateManager().SetOrthoIdleState();
     }
 
     public override void Exit()
     {
-        Debug.Log("Exiting Orthographic Mode");
+        _orthoCam.enabled = false;
     }
 
-    private void ShowLineRendereAndCanvas()
-    {
-        foreach (Room room in RoomManager.Instance._allRooms)
-        {
-           
-        }
-    }
-    
     private void RemoveWallMeshes()
     {
-        foreach (Room room in RoomManager.Instance._allRooms)
+        foreach (Wall wall in WallManager.Instance._allWalls)
         {
-            foreach (Wall wall in room._roomWalls)
-            {
-                GameObject.Destroy(wall.GetComponent<MeshRenderer>());
-                GameObject.Destroy(wall.GetComponent<MeshFilter>());
-            }
+            GameObject.Destroy(wall.GetComponent<MeshRenderer>());
+            GameObject.Destroy(wall.GetComponent<MeshFilter>());
         }
     }
 
@@ -44,5 +37,26 @@ public class OrthographicState : CameraState
         Camera.main.transform.rotation = Quaternion.Euler(90, 0, 0);
         Camera.main.fieldOfView = 45;
 
+        _orthoCam.enabled = true;
+    }
+
+    private void ShowGameobjectsFromOrthoState()
+    {
+        // Disable All the Line Renderers from Wall
+        foreach (Wall wall in WallManager.Instance._allWalls)
+        {
+            wall._lineRenderer.enabled = true;
+            wall._boxCollider.enabled = true;
+        }
+
+        // Disable Openings 2d meshes
+        // Sometime Instance is null, shouldn't be but, may be because its instace is not yet created but still called.
+        if (OpeningManager.Instance != null)
+        {
+            foreach (Opening opening in OpeningManager.Instance._allOpenings)
+            {
+                opening.GetComponent<MeshRenderer>().enabled = true;
+            }
+        }
     }
 }

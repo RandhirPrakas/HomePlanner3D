@@ -47,4 +47,19 @@ public class WallManager : MonoBehaviour
             }
         }
     }
+
+    public void DestroyWall(Wall wall)
+    {
+        if (wall == null) return;
+
+        // Notify endpoints to disconnect from this wall
+        wall.GetStartWallPoint()?.RemoveConnectedWall(wall);
+        wall.GetEndWallPoint()?.RemoveConnectedWall(wall);
+
+        // Remove from global list
+        _allWalls.Remove(wall);
+
+        // Destroy the game object
+        GameObject.Destroy(wall.gameObject);
+    }
 }

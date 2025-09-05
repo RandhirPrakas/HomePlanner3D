@@ -1,22 +1,20 @@
-using UnityEditor;
 using UnityEngine;
 
-public class AddDoorState : ICameraSubState
+public class AddWindowState : ICameraSubState
 {
     private Wall _targetWall;
     private GameObject _dotPreview;
-    private float _tOnWall;
     private GameObject _dotPrefab;
 
-    public AddDoorState()
+    public AddWindowState()
     {
-        _dotPrefab = Resources.Load<GameObject>("Prefabs/DoorDotPrefab");
+        _dotPrefab = Resources.Load<GameObject>("Prefabs/WindowDotPrefab");
     }
 
     public void Enter()
     {
-        Debug.Log("Entered AddDoorState");
-       
+        Debug.Log("Entered AddWindowState");
+
         if (_targetWall == null)
         {
             _targetWall = FindFirstWall();
@@ -36,24 +34,25 @@ public class AddDoorState : ICameraSubState
         else
         {
             _dotPreview = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            _dotPreview.name = "Door Preview";
+            _dotPreview.name = "Window Preview";
             _dotPreview.transform.localScale = Vector3.one;
-            _dotPreview.tag = "Door";
+            _dotPreview.tag = "Window";
         }
 
-        // --- Move preview to midpoint of target wall ---
+        // --- Place preview at midpoint of target wall ---
         Vector3 start = _targetWall.GetStartPosition();
         Vector3 end = _targetWall.GetEndPosition();
         Vector3 midPoint = Vector3.Lerp(start, end, 0.5f);
-        _dotPreview.transform.position = new Vector3(midPoint.x, 0.5f, midPoint.z);
 
-        PlaceDoor(_targetWall, midPoint);
+        float windowHeight = AppHelper._wallHeight * 0.5f; // middle of wall height
+        _dotPreview.transform.position = new Vector3(midPoint.x, windowHeight, midPoint.z);
+
+        PlaceWindow(_targetWall, midPoint);
     }
-
 
     public void Exit()
     {
-        Debug.Log("Exited AddDoorState");
+        Debug.Log("Exited AddWindowState");
 
         if (_dotPreview != null)
         {
@@ -65,23 +64,21 @@ public class AddDoorState : ICameraSubState
 
     public void Init(Vector3 worldPos, Vector2 screenPos)
     {
-        Debug.Log("Initialized AddDoorState");
+        Debug.Log("Initialized AddWindowState");
     }
 
     public void OnTouchStart(Vector3 worldPos, Vector2 screenPos)
     {
-        worldPos.y = 0.5f;
+        worldPos.y = AppHelper._wallHeight * 0.5f; // force window to mid-wall
         UpdatePreviewPosition(worldPos);
     }
 
     public void OnTouchHold(Vector3 worldPos, Vector2 screenPos)
     {
+        worldPos.y = AppHelper._wallHeight * 0.5f;
         UpdatePreviewPosition(worldPos);
     }
 
-    /// <summary>
-    /// Updates the preview dot's position based on the user's touch.
-    /// </summary>
     private void UpdatePreviewPosition(Vector3 worldPos)
     {
         if (_dotPreview == null) return;
@@ -91,8 +88,8 @@ public class AddDoorState : ICameraSubState
         if (nearestWall != null)
         {
             _targetWall = nearestWall;
-
-            _dotPreview.transform.position = new Vector3(closestPoint.x, 3f, closestPoint.z);
+            float windowHeight = AppHelper._wallHeight * 0.5f;
+            _dotPreview.transform.position = new Vector3(closestPoint.x, windowHeight, closestPoint.z);
         }
     }
 
@@ -100,27 +97,27 @@ public class AddDoorState : ICameraSubState
     {
         Wall nearestWall = FindNearestWall(worldPos, out Vector3 closestPoint);
 
-        closestPoint.y = 3f;
         if (nearestWall != null)
         {
-            // Create a simple dot prefab at the position
-            GameObject doorDot = GameObject.Instantiate(
+            float windowHeight = AppHelper._wallHeight * 0.5f;
+            Vector3 finalPos = new Vector3(closestPoint.x, windowHeight, closestPoint.z);
+
+            GameObject windowDot = GameObject.Instantiate(
                 _dotPreview,
-                closestPoint,
+                finalPos,
                 Quaternion.identity,
                 nearestWall.transform
             );
-            doorDot.GetComponent<MeshRenderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            Door door = doorDot.AddComponent<Door>();
-            door.Initialize(nearestWall, closestPoint);
+            windowDot.GetComponent<MeshRenderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
 
-            Debug.Log($"Door opening placed on {nearestWall.name} at {closestPoint}");
+            Window window = windowDot.AddComponent<Window>();
+            window.Initialize(nearestWall, finalPos);
+
+            Debug.Log($"Window opening placed on {nearestWall.name} at {finalPos}");
         }
 
-        // Switch back to the safe IdleState
         GameManager.Instance.GetSubStateManager().SetSubState(new Ortho_IdleState());
     }
-
 
     private Wall FindNearestWall(Vector3 point, out Vector3 closestPoint, float snapThreshold = 5f)
     {
@@ -128,78 +125,73 @@ public class AddDoorState : ICameraSubState
         float minDist = float.MaxValue;
         closestPoint = point;
 
-        
-            foreach (Wall wall in WallManager.Instance._allWalls)
+        foreach (Wall wall in WallManager.Instance._allWalls)
+        {
+            if (wall == null) continue;
+
+            Vector3 a = wall.GetStartPosition();
+            Vector3 b = wall.GetEndPosition();
+
+            Vector3 proj;
+            GetClosestPointOnLine(a, b, point, out proj);
+
+            float dist = Vector3.Distance(proj, point);
+
+            if (dist < minDist)
             {
-                if (wall == null) continue;
-
-                Vector3 a = wall.GetStartPosition();
-                Vector3 b = wall.GetEndPosition();
-
-                Vector3 proj;
-                GetClosesDistance(a, b, point, out proj);
-
-                float dist = Vector3.Distance(proj, point);
-
-                if (dist < minDist)
-                {
-                    minDist = dist;
-                    nearest = wall;
-                    closestPoint = proj;
-                }
+                minDist = dist;
+                nearest = wall;
+                closestPoint = proj;
             }
-        
+        }
 
         if (minDist > snapThreshold) nearest = null;
-
         return nearest;
     }
 
-    // Get Distance from touch point to the nearest wall
-    private float GetClosesDistance(Vector3 a, Vector3 b, Vector3 point, out Vector3 closest)
+    private void GetClosestPointOnLine(Vector3 a, Vector3 b, Vector3 point, out Vector3 closest)
     {
         Vector3 ab = b - a;
         float len2 = ab.sqrMagnitude;
-        if (len2 < 1e-6f) { closest = a; return 0f; }
+        if (len2 < 1e-6f) { closest = a; return; }
         float t = Vector3.Dot(point - a, ab) / len2;
         t = Mathf.Clamp01(t);
         closest = a + ab * t;
-        return t;
     }
 
     private Wall FindFirstWall()
     {
-        foreach(Wall wall in WallManager.Instance._allWalls)
+        foreach (Wall wall in WallManager.Instance._allWalls)
         {
             if (wall != null)
                 return wall;
         }
-
         return null;
     }
 
-    private void PlaceDoor(Wall wall, Vector3 position)
+    private void PlaceWindow(Wall wall, Vector3 position)
     {
         if (_dotPrefab == null)
         {
-            Debug.LogWarning("Dot prefab not set, skipping door placement.");
+            Debug.LogWarning("Dot prefab not set, skipping window placement.");
             return;
         }
 
-        GameObject doorDot = GameObject.Instantiate(
+        float windowHeight = AppHelper._wallHeight * 0.5f;
+        Vector3 finalPos = new Vector3(position.x, windowHeight, position.z);
+
+        GameObject windowDot = GameObject.Instantiate(
             _dotPrefab,
-            position,
+            finalPos,
             Quaternion.identity,
             wall.transform
         );
 
-        doorDot.GetComponent<MeshRenderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        windowDot.GetComponent<MeshRenderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
 
-        Door door = doorDot.AddComponent<Door>();
-        door.Initialize(wall, position);
+        Window window = windowDot.AddComponent<Window>();
+        window.Initialize(wall, finalPos);
 
-        door.transform.position = new Vector3(position.x, 0.5f, position.z);
-        Debug.Log($"Door opening automatically placed on {wall.name} at {position}");
+        Debug.Log($"Window opening automatically placed on {wall.name} at {finalPos}");
     }
-
 }

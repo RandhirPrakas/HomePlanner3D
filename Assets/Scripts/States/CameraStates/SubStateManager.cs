@@ -1,5 +1,4 @@
-﻿
-using Unity.VisualScripting;
+﻿using Unity.VisualScripting;
 using UnityEngine;
 
 [System.Serializable]
@@ -68,6 +67,12 @@ public class SubStateManager
     {
         if (GameManager.Instance.GetCameraStateManager().GetCurrentState() is OrthographicState)
         {
+            ClearConsole();
+            if (gameObject.CompareTag("Door"))
+            {
+                SetSubState(new EditDoorState());
+                return;
+            }
 
             if (gameObject.CompareTag("Ground") || gameObject.CompareTag("Wall"))
             {
@@ -93,7 +98,7 @@ public class SubStateManager
                 if (currentState is MoveWallState moveWallState)
                 {
                     // already in MoveWallState → just change active wall
-                    moveWallState.SetActiveWall(wall);
+                    //moveWallState.SetActiveWall(wall);
                 }
                 else
                 {
@@ -104,4 +109,15 @@ public class SubStateManager
         }
 
     }
+
+    #region For Dev Purpose
+
+    public static void ClearConsole()
+    {
+        var logEntries = System.Type.GetType("UnityEditor.LogEntries, UnityEditor.dll");
+        var clearMethod = logEntries.GetMethod("Clear", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public);
+        clearMethod.Invoke(null, null);
+    }
+
+    #endregion
 }

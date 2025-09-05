@@ -12,6 +12,8 @@ public class GameManager : MonoBehaviour
 
     [SerializeField] private CameraStateManager _cameraStateManager;
     [SerializeField] private SubStateManager _subStateManager;
+    [SerializeField] private OrthoCam _orthoCam;
+    [SerializeField] private PerspCam _perspCam;
 
     public Wall _activeWall;
     #region Getter and Setter
@@ -85,8 +87,6 @@ public class GameManager : MonoBehaviour
                 SetSubState(new EditRoomPointsState());
             }
         }
-
-
     }
 
     private void Initialize()
@@ -94,6 +94,7 @@ public class GameManager : MonoBehaviour
         if (_touchManager == null)
             _touchManager = FindObjectOfType<TouchManager>();
 
+        InitCameras();
         InitStates();
     }
 
@@ -103,5 +104,25 @@ public class GameManager : MonoBehaviour
         // Start in the safe IdleState
         _subStateManager.SetOrthoIdleState();
     }
+
+    void InitCameras()
+    {
+        _orthoCam = Camera.main.GetComponent<OrthoCam>();
+        _orthoCam._mainCamera = Camera.main;
+    }
+
+    #region camera
+
+    public OrthoCam GetOrthoCamera()
+    {
+        return _orthoCam;
+    }
+
+    public PerspCam GetPerspCam()
+    {
+        return _perspCam;
+    }
+
+    #endregion
 
 }

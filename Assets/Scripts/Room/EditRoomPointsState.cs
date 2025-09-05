@@ -42,7 +42,8 @@ public class EditRoomPointsState : ICameraSubState
     public void OnTouchStart(Vector3 worldPos, Vector2 screenPos)
     {
         _selectedPoint = GetPointUnderTouch(worldPos);
-        _selectedPoint._activeSphere.GetComponent<MeshRenderer>().material.color = _highlightedColor;
+        if(_selectedPoint != null)
+            _selectedPoint._activeSphere.GetComponent<MeshRenderer>().material.color = _highlightedColor;
     }
 
     public void OnTouchHold(Vector3 worldPos, Vector2 screenPos)
@@ -50,67 +51,99 @@ public class EditRoomPointsState : ICameraSubState
         if (_selectedPoint != null)
         {
             _selectedPoint.SetPosition(worldPos + Vector3.up * AppHelper._lrYPos);
-        }
 
-        if (_selectedPoint != null)
-        {
             var allOtherPoints = WallPointManager.Instance._allWallPoints
                 .FindAll(p => p != _selectedPoint);
 
             Vector3 snappedPosition = AppHelper.SmartSnapToAxis(worldPos, allOtherPoints);
 
-           
+
             snappedPosition += Vector3.up * AppHelper._lrYPos;
 
             _selectedPoint.SetPosition(snappedPosition);
-        }
 
-        // To Move the wall accordingly
-        // Issue occurs after merging
-        /*foreach(Wall wall in _selectedPoint.GetConnectedWalls())
-        {
-            wall.UpdateFromPoints();
-        }*/
+            // To Move the wall accordingly
+            // Issue occurs after merging
+            foreach (Wall wall in _selectedPoint.GetConnectedWalls())
+            {
+                wall.UpdateFromPoints(true);
+            }
+        }
     }
 
     public void OnTouchEnd(Vector3 worldPos, Vector2 screenPos)
     {
-        if (_selectedPoint != null)
+        if (_selectedPoint == null) return;
+
+        Vector3 snappedPos = AppHelper.SmartSnapToAxis(worldPos, WallPointManager.Instance._allWallPoints);
+        snappedPos += Vector3.up * AppHelper._lrYPos;
+
+        WallPoint targetPointToMerge = WallPointManager.Instance.GetExistingPointAt(snappedPos, _selectedPoint);
+        if (targetPointToMerge != null)
         {
-            Vector3 snappedPos = AppHelper.SmartSnapToAxis(worldPos, WallPointManager.Instance._allWallPoints);
-            snappedPos += Vector3.up * AppHelper._lrYPos;
+            Debug.Log("Action: Merging with existing point.");
+            _selectedPoint.MergeWith(targetPointToMerge);
 
-            WallPoint target = WallPointManager.Instance.GetExistingPointAt(snappedPos, _selectedPoint);
-
-
-            if (target != null)
-            {
-                _selectedPoint.MergeWith(target);
-            }
-            else
-            {
-                _selectedPoint.SetPosition(snappedPos);
-            }
-
-            _selectedPoint._activeSphere.GetComponent<MeshRenderer>().material.color = Color.yellow;
             _selectedPoint = null;
+            return;
         }
+
+        var wallsToRedraw = new List<KeyValuePair<Wall, WallPoint>>();
+        foreach (Wall wall in _selectedPoint.GetConnectedWalls())
+        {
+            WallPoint otherPoint = wall.GetStartWallPoint() == _selectedPoint ? wall.GetEndWallPoint() : wall.GetStartWallPoint();
+            wallsToRedraw.Add(new KeyValuePair<Wall, WallPoint>(wall, otherPoint));
+        }
+
+        foreach (var pair in wallsToRedraw)
+        {
+            Wall wall = pair.Key;
+            WallManager.Instance.DestroyWall(wall);
+        }
+
+        _selectedPoint.SetPosition(snappedPos);
+
+        foreach (var pair in wallsToRedraw)
+        {
+            WallPoint otherPoint = pair.Value;
+            Debug.Log($"Redrawing wall from {otherPoint._position} to {_selectedPoint._position}");
+            AppHelper.ManageWallsAndWallPoints(otherPoint._position, _selectedPoint._position);
+        }
+
+        if (_selectedPoint != null && _selectedPoint._activeSphere != null)
+        {
+            _selectedPoint._activeSphere.GetComponent<MeshRenderer>().material.color = Color.yellow;
+        }
+        _selectedPoint = null;
+
+        AppEventHandler.InvokeOnWallCreation();
     }
 
     private WallPoint GetPointUnderTouch(Vector3 position)
     {
+        WallPoint closestPoint = null;
+        float closestSqrDist = float.MaxValue;
+
+        Vector3 adjustedPos = position + Vector3.up * AppHelper._lrYPos;
+        float thresholdSqr = AppHelper._pointSnapThreshold * AppHelper._pointSnapThreshold;
+
         foreach (WallPoint point in WallPointManager.Instance._allWallPoints)
         {
-            if (Vector3.Distance(position + Vector3.up * AppHelper._lrYPos, point._position) < 10f) 
+            float sqrDist = (adjustedPos - point._position).sqrMagnitude;
+
+            if (sqrDist < thresholdSqr && sqrDist < closestSqrDist)
             {
-                return point;
+                closestSqrDist = sqrDist;
+                closestPoint = point;
             }
         }
-        return null;
+
+        return closestPoint;
     }
 
     public void Init(Vector3 worldPos, Vector2 screenPos)
     {
         throw new System.NotImplementedException();
     }
+
 }

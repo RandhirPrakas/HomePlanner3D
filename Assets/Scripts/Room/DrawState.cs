@@ -1,6 +1,4 @@
-using System.Collections;
 using System.Collections.Generic;
-using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 
 public class DrawState : ICameraSubState
@@ -126,97 +124,26 @@ public class DrawState : ICameraSubState
 
     private void DrawSingleWall(Vector3 endPosition)
     {
-
-        GameObject wallGO = new GameObject($"Wall_{WallManager._wallIndex++}");
-        Wall wallComp = wallGO.AddComponent<Wall>();
-        wallGO.transform.SetParent(_strandedWalls);
-
-        // Create/Get wall points
-        WallPoint startWallPoint = WallPointManager.Instance.CreateOrGetwallPoints(_startPos);
-
         endPosition = AppHelper.SmartSnapToAxis(endPosition, WallPointManager.Instance._allWallPoints);
         endPosition = AppHelper.WrapPosition(_startPos, endPosition);
+        endPosition.y = 0;
+        AppHelper.ManageWallsAndWallPoints(_startPos, endPosition);
 
-        WallPoint endWallPoint = WallPointManager.Instance.CreateOrGetwallPoints(endPosition + Vector3.up * AppHelper._lrYPos);
-
-        startWallPoint.transform.SetParent(WallPointManager.Instance.transform, true);
-        endWallPoint.transform.SetParent(WallPointManager.Instance.transform, true);
-
-        // Add Connected Wall Points
-        startWallPoint.AddConnectedWallPoint(endWallPoint);
-        endWallPoint.AddConnectedWallPoint(startWallPoint);
-
-        // Add Connected Walls
-        startWallPoint.AddConnectedWall(wallComp);
-        endWallPoint.AddConnectedWall(wallComp);
-
-        // AddRequired WallPoints
-        AddAdditionalWallPoint(startWallPoint, _firstNearestWall);
-        AddAdditionalWallPoint(endWallPoint, _secondNearestWall);
-
-        // Add the Current Wallpoint
-        AddCurrentWallpoint(_firstNearestWall, startWallPoint);
-        AddCurrentWallpoint(_secondNearestWall, endWallPoint);
-
-        // RemoveRedundant wallPoints
-        SplitConnectedWall(_firstNearestWall, startWallPoint);
-        SplitConnectedWall(_secondNearestWall, endWallPoint);
-
-        wallComp.SetStartAndEndPosition(startWallPoint, endWallPoint);
-
-        WallManager.Instance._allWalls.Add(wallComp);
         AppEventHandler.InvokeOnWallCreation();
+
     }
 
-    private void AddAdditionalWallPoint(WallPoint wallPoint, Wall wall = null)
-    {
-        if(wall != null)
-        {
-            wallPoint.AddConnectedWallPoint(wall.GetStartWallPoint());
-            wallPoint.AddConnectedWallPoint(wall.GetEndWallPoint());
-        }
-    }
-
-   
-    public bool TrySnapToLine(Vector3 point, Vector3 lineStart, Vector3 lineEnd, out Vector3 snappedPoint)
-    {
-        snappedPoint = point;
-
-        if (Vector3.Distance(point, lineEnd) <= 1 || Vector3.Distance(point, lineStart) <= 1)
-        {
-            Debug.Log("Point is Too Close to the end");
-            return false;
-        }
-
-        if (lineStart == lineEnd)
-            return false;
-
-        Vector3 lineDir = lineEnd - lineStart;
-        float t = Vector3.Dot(point - lineStart, lineDir) / lineDir.sqrMagnitude;
-        t = Mathf.Clamp01(t);
-
-        Vector3 closest = lineStart + t * lineDir;
-        float dist = Vector3.Distance(point, closest);
-
-        if (dist <= AppHelper._nearestWallSnapThreshold)
-        {
-            snappedPoint = closest;
-            return true;
-        }
-
-        return false;
-    }
 
     public Vector3 TryGetNearestWall(Vector3 snappedPosition, bool isFirstTouch)
     {
         Debug.Log("Trying to get the wall ");
         Vector3 newSnappedPosition = Vector3.zero;
-        foreach(Wall wall in WallManager.Instance._allWalls)
+        foreach (Wall wall in WallManager.Instance._allWalls)
         {
-            bool nearWall = TrySnapToLine(snappedPosition, wall.GetStartPosition(), wall.GetEndPosition(), out newSnappedPosition);
-            if(nearWall)
+            bool nearWall = AppHelper.TrySnapToLine(snappedPosition, wall.GetStartPosition(), wall.GetEndPosition(), out newSnappedPosition);
+            if (nearWall)
             {
-                if(isFirstTouch)
+                if (isFirstTouch)
                 {
                     _firstNearestWall = wall;
                 }
@@ -224,67 +151,10 @@ public class DrawState : ICameraSubState
                 {
                     _secondNearestWall = wall;
                 }
-                    return newSnappedPosition;
+                return newSnappedPosition;
             }
         }
 
         return snappedPosition;
     }
-
-    private void SplitConnectedWall(Wall wall, WallPoint splitPoint)
-    {
-        if (wall == null)
-            return;
-        DrawWall(wall.GetStartWallPoint(), splitPoint);
-        DrawWall(splitPoint, wall.GetEndWallPoint());
-
-        wall.GetStartWallPoint().RemoveConnectedWallPoint(wall.GetEndWallPoint());
-        wall.GetEndWallPoint().RemoveConnectedWallPoint(wall.GetStartWallPoint());
-        wall.DeleteWall();
-    }
-
-    private void AddCurrentWallpoint(Wall wall, WallPoint currentWallpoint)
-    {
-        if (wall == null || currentWallpoint == null)
-            return;
-        wall.GetStartWallPoint().AddConnectedWallPoint(currentWallpoint);
-        wall.GetEndWallPoint().AddConnectedWallPoint(currentWallpoint);
-    }
-
-    private void ManageWallsAndWallPoints(Vector3 start, Vector3 end)
-    {
-        Vector3 intersectionPoint = Vector3.zero;
-        foreach(Wall wall in WallManager.Instance._allWalls)
-        {
-
-            if(AppHelper.IsPointOnLineSegment(wall.GetStartPosition(), wall.GetEndPosition(),end))
-            {
-                // Draw wall F
-                return;
-            }
-            else if(AppHelper.TryGetLineIntersection(start, end, wall.GetStartPosition(), wall.GetEndPosition(),out intersectionPoint))
-            {
-
-            }
-            else
-            {
-                // Draw Normal Wall
-            }
-        }
-        // else check for each wall if it intersect
-
-        // else just draw wall
-    }
-
-    private void DrawWall(WallPoint startPoint, WallPoint endPoint)
-    {
-        GameObject wallGO = new GameObject($"Wall_{WallManager._wallIndex++}");
-        Wall wallComp = wallGO.AddComponent<Wall>();
-        wallGO.transform.SetParent(_strandedWalls);
-        wallComp.SetStartAndEndPosition(startPoint, endPoint);
-
-        WallManager.Instance._allWalls.Add(wallComp);
-    }
-    
-
 }

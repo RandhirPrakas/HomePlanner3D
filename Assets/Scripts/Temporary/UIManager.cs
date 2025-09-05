@@ -8,6 +8,7 @@ public class UIManager : MonoBehaviour
     [SerializeField] private Button _clearButton;
     [SerializeField] private Button _drawButton;
     [SerializeField] private Button _toggleButton;
+    [SerializeField] private Button _addDoorButton;
 
     private void Awake()
     {
@@ -19,12 +20,14 @@ public class UIManager : MonoBehaviour
         _toggleButton.onClick.AddListener(() => ToggleCamerStates());
         _clearButton.onClick.AddListener(() => ResetSceneAndCreateNewRoom());
         _drawButton.onClick.AddListener(() => GameManager.Instance.SetSubState(new DrawState()));
+        _addDoorButton.onClick.AddListener(() => GameManager.Instance.SetSubState(new AddDoorState()));
     }
 
     private void OnDisable()
     {
         _drawButton.onClick.RemoveAllListeners();
         _clearButton.onClick.RemoveAllListeners();
+        _addDoorButton.onClick.RemoveAllListeners();
     }
 
     private void ResetSceneAndCreateNewRoom()
@@ -34,6 +37,12 @@ public class UIManager : MonoBehaviour
             Destroy(wp.gameObject);
         }
         WallPointManager.Instance._allWallPoints.Clear();
+
+        foreach(Wall wall in WallManager.Instance._allWalls)
+        {
+            Destroy(wall.gameObject);
+        }
+        WallManager.Instance._allWalls.Clear();
 
         foreach (Room room in RoomManager.Instance._allRooms)
         {

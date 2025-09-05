@@ -65,7 +65,7 @@ public class TouchManager : MonoBehaviour
         }
 
 #else
-        if (Input.touchCount != 1) return;
+        /*if (Input.touchCount != 1) return;
 
         Touch touch = Input.GetTouch(0);
 
@@ -99,6 +99,54 @@ public class TouchManager : MonoBehaviour
                 break;
 
             case TouchPhase.Ended:
+                _currentTouchTime = Time.time;
+
+                if (_isDragging)
+                {
+                    Vector3 worldPos = ScreenToWorld(touch.position);
+                    currentSubState.OnTouchEnd(worldPos, touch.position);
+                }
+                else if (IsTap())
+                {
+                    HandleTap(touch.position);
+                }
+                break;*/
+
+                if (Input.touchCount != 1) return;
+
+        Touch touch = Input.GetTouch(0);
+
+        if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject(touch.fingerId))
+            return;
+
+        switch (touch.phase)
+        {
+            case TouchPhase.Began:
+                _initialTouchPosition = touch.position;
+                _initialTouchTime = Time.time;
+                _isDragging = false;
+                break;
+
+            case TouchPhase.Moved:
+            case TouchPhase.Stationary:
+                _currentTouchPosition = touch.position;
+
+                if (!_isDragging && (_currentTouchPosition - _initialTouchPosition).magnitude > _dragThreshold)
+                {
+                    _isDragging = true;
+                    Vector3 worldPos = ScreenToWorld(_initialTouchPosition);
+                    currentSubState.OnTouchStart(worldPos, _initialTouchPosition);
+                }
+
+                if (_isDragging)
+                {
+                    Vector3 worldPos = ScreenToWorld(_currentTouchPosition);
+                    currentSubState.OnTouchHold(worldPos, _currentTouchPosition);
+                }
+                break;
+
+            case TouchPhase.Ended:
+            case TouchPhase.Canceled:
                 _currentTouchTime = Time.time;
 
                 if (_isDragging)

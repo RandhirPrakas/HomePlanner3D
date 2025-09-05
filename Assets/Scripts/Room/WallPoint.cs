@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using TMPro.EditorUtilities;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.UIElements;
@@ -9,9 +8,11 @@ using UnityEngine.UIElements;
 public class WallPoint : MonoBehaviour
 {
     public Vector3 _position;
-    [SerializeField] List<WallPoint> _connectedWallPoints = new List<WallPoint>();
-    [SerializeField] private List<Wall> _connectedWalls = new List<Wall>();
     public GameObject _activeSphere;
+
+    [SerializeField] private List<WallPoint> _connectedWallPoints = new List<WallPoint>();
+    [SerializeField] private List<Wall> _connectedWalls = new List<Wall>();
+    [SerializeField] private List<Room> _connectedRooms = new List<Room>();
 
     public List<WallPoint> GetConnectedWallPoints()
     {
@@ -44,10 +45,10 @@ public class WallPoint : MonoBehaviour
         if (target == null || target == this)
             return;
 
+        // Redirect neighbors 
         foreach (var neighbor in _connectedWallPoints.ToList())
         {
-            if (neighbor == target)
-                continue;
+            if (neighbor == target) continue;
 
             neighbor._connectedWallPoints.Remove(this);
 
@@ -58,11 +59,41 @@ public class WallPoint : MonoBehaviour
                 target._connectedWallPoints.Add(neighbor);
         }
 
+        // Redirect connected walls 
+        foreach (var wall in _connectedWalls.ToList())
+        {
+            if (wall.GetStartWallPoint() == this)
+                wall.SetStartWallPoint(target);
+
+            if (wall.GetEndWallPoint() == this)
+                wall.SetEndWallPoint(target);
+
+            if (!target.GetConnectedWalls().Contains(wall))
+                target.AddConnectedWall(wall);
+
+            wall.UpdateFromPoints(true);
+        }
+
+        // Redirect connected rooms 
+        foreach (var room in _connectedRooms.ToList())
+        {
+            if (room._roomWallPoints.Contains(this))
+            {
+                room._roomWallPoints.Remove(this);
+
+                if (!room._roomWallPoints.Contains(target))
+                    room._roomWallPoints.Add(target);
+            }
+
+            target.AddConnectedRoom(room);
+            room.UpdateFloor();
+        }
+
         DestroyHighlightVisual();
-
         WallPointManager.Instance._allWallPoints.Remove(this);
+        Destroy(gameObject);
 
-        GameObject.Destroy(this.gameObject);
+        AppEventHandler.InvokeOnWallCreation();
     }
 
 
@@ -91,18 +122,41 @@ public class WallPoint : MonoBehaviour
 
     public void AddConnectedWall(Wall newWall)
     {
-        if (!_connectedWalls.Contains(newWall))
+        if(!_connectedWalls.Contains(newWall))
+        {
             _connectedWalls.Add(newWall);
+        }
     }
 
     public void RemoveConnectedWall(Wall wall)
     {
-        if (_connectedWalls.Contains(wall))
+        if(_connectedWalls.Contains(wall))
+        {
             _connectedWalls.Remove(wall);
+        }
     }
-  
+
     public List<Wall> GetConnectedWalls()
     {
         return _connectedWalls;
+    }
+
+    public void AddConnectedRoom(Room room)
+    {
+        if (!_connectedRooms.Contains(room))
+        {
+            _connectedRooms.Add(room);
+        }
+    }
+
+    public void RemoveConnectedRoom(Room room)
+    {
+        if (_connectedRooms.Contains(room))
+            _connectedRooms.Remove(room);
+    }
+
+    public List<Room> GetConnectedRooms()
+    {
+        return _connectedRooms;
     }
 }

@@ -17,21 +17,12 @@ public static class AppHelper
 
     #region Variables_PointsManagements
 
-    public static readonly float _pointSnapThreshold = 5f;
-    public static readonly float _nearestWallSnapThreshold = 3f;
+    public static readonly float _pointSnapThreshold = 4f;
+    public static readonly float _nearestWallSnapThreshold = 4f;
 
     #endregion
 
-
-    #region Events
-
-    
-
-    #region Invoker Functions
-    
-    #endregion
-
-    #endregion
+    public static Material _defaultFloorMaterial = Resources.Load<Material>("ProceduralMaterials/DefaultFloorMaterial");
 
 
     public static readonly float _lrYPos = 0.1f;
@@ -51,44 +42,6 @@ public static class AppHelper
             pointToSnap = snapPosition;
         }
         return pointToSnap;
-    }
-
-    public static Vector3 SmartSnapToAxis(Vector3 currentPosition, List<WallPoint> allWallPoints)
-    {
-        float closestXDiff = float.MaxValue;
-        float closestZDiff = float.MaxValue;
-        float? snapX = null;
-        float? snapZ = null;
-
-        foreach (var wp in allWallPoints)
-        {
-            float xDiff = Mathf.Abs(currentPosition.x - wp._position.x);
-            float zDiff = Mathf.Abs(currentPosition.z - wp._position.z);
-
-            if (xDiff < closestXDiff)
-            {
-                closestXDiff = xDiff;
-                snapX = wp._position.x;
-            }
-
-            if (zDiff < closestZDiff)
-            {
-                closestZDiff = zDiff;
-                snapZ = wp._position.z;
-            }
-        }
-
-        if (closestXDiff < _pointSnapThreshold)
-        {
-            currentPosition.x = snapX.Value;
-        }
-
-        if (closestZDiff < _pointSnapThreshold)
-        {
-            currentPosition.z = snapZ.Value;
-        }
-
-        return currentPosition;
     }
 
     public static float DistanceBetweenTwoPoints(Vector3 a, Vector3 b)
@@ -189,21 +142,338 @@ public static class AppHelper
         return false; // No intersection within the line segments
     }
 
-    public static bool IsPointOnLineSegment(Vector3 a, Vector3 b, Vector3 p, float tolerance = 0.001f)
+    public static bool IsPointOnLineSegment(Vector3 a, Vector3 b, Vector3 p)
     {
+        Vector2 a2 = new Vector2(a.x, a.z);
+        Vector2 b2 = new Vector2(b.x, b.z);
+        Vector2 p2 = new Vector2(p.x, p.z);
 
-        Vector3 ab = b - a;
-        Vector3 ap = p - a;
+        Vector2 ab = b2 - a2;
+        Vector2 ap = p2 - a2;
 
-        
-        if (Vector3.Cross(ab, ap).sqrMagnitude > tolerance)
+        // Degenerate case: a and b are the same point
+        if (ab == Vector2.zero)
+            return p2 == a2;
+
+        // Collinearity check in 2D: cross product is a scalar
+        if (Mathf.Abs(ab.x * ap.y - ab.y * ap.x) > Mathf.Epsilon)
             return false;
 
-        float dot = Vector3.Dot(ap, ab);
-        if (dot < 0) return false;
-
-        if (dot > ab.sqrMagnitude) return false;
+        // Check if projection is within the segment
+        float dot = Vector2.Dot(ap, ab);
+        if (dot < 0 || dot > ab.sqrMagnitude)
+            return false;
 
         return true;
     }
+
+    public static bool TrySnapToLine(Vector3 point, Vector3 lineStart, Vector3 lineEnd, out Vector3 snappedPoint)
+    {
+        snappedPoint = point;
+
+        if (Vector3.Distance(point, lineEnd) <= 1 || Vector3.Distance(point, lineStart) <= 1)
+        {
+            Debug.Log("Point is Too Close to the end");
+            return false;
+        }
+
+        if (lineStart == lineEnd)
+            return false;
+
+        Vector3 lineDir = lineEnd - lineStart;
+        float t = Vector3.Dot(point - lineStart, lineDir) / lineDir.sqrMagnitude;
+        t = Mathf.Clamp01(t);
+
+        Vector3 closest = lineStart + t * lineDir;
+        float dist = Vector3.Distance(point, closest);
+
+        if (dist <= AppHelper._nearestWallSnapThreshold)
+        {
+            snappedPoint = closest;
+            return true;
+        }
+
+        return false;
+    }
+
+    #region Helper for Drawing 
+
+
+    public static void AddAdditionalWallPoint(WallPoint wallPoint, Wall wall = null)
+    {
+        if (wall != null)
+        {
+            wallPoint.AddConnectedWallPoint(wall.GetStartWallPoint());
+            wallPoint.AddConnectedWallPoint(wall.GetEndWallPoint());
+        }
+    }
+
+
+    public static Vector3 SmartSnapToAxis(Vector3 currentPosition, List<WallPoint> allWallPoints)
+    {
+        float closestXDiff = float.MaxValue;
+        float closestZDiff = float.MaxValue;
+        float? snapX = null;
+        float? snapZ = null;
+
+        foreach (var wp in allWallPoints)
+        {
+            float xDiff = Mathf.Abs(currentPosition.x - wp._position.x);
+            float zDiff = Mathf.Abs(currentPosition.z - wp._position.z);
+
+            if (xDiff < closestXDiff)
+            {
+                closestXDiff = xDiff;
+                snapX = wp._position.x;
+            }
+
+            if (zDiff < closestZDiff)
+            {
+                closestZDiff = zDiff;
+                snapZ = wp._position.z;
+            }
+        }
+
+        if (closestXDiff < _pointSnapThreshold)
+        {
+            currentPosition.x = snapX.Value;
+        }
+
+        if (closestZDiff < _pointSnapThreshold)
+        {
+            currentPosition.z = snapZ.Value;
+        }
+
+        return currentPosition;
+    }
+
+    public static void AddCurrentWallpoint(Wall wall, WallPoint currentWallpoint)
+    {
+        if (wall == null || currentWallpoint == null)
+            return;
+        wall.GetStartWallPoint().AddConnectedWallPoint(currentWallpoint);
+        wall.GetEndWallPoint().AddConnectedWallPoint(currentWallpoint);
+    }
+
+    public static void SplitConnectedWall(Wall wall, WallPoint splitPoint, Transform strandedWall = null)
+    {
+        if (wall == null)
+            return;
+
+        DrawWall(wall.GetStartWallPoint(), splitPoint);
+        DrawWall(splitPoint, wall.GetEndWallPoint());
+
+        wall.GetStartWallPoint().RemoveConnectedWallPoint(wall.GetEndWallPoint());
+        wall.GetEndWallPoint().RemoveConnectedWallPoint(wall.GetStartWallPoint());
+        wall.DeleteWall();
+    }
+
+    public static Wall DrawWall(WallPoint startPoint, WallPoint endPoint, Transform strandedWalls = null)
+    {
+        GameObject wallGO = new GameObject($"Wall_{WallManager._wallIndex++}");
+        Wall wallComp = wallGO.AddComponent<Wall>();
+        wallGO.transform.SetParent(strandedWalls);
+        wallComp.SetStartAndEndPosition(startPoint, endPoint);
+
+        WallManager.Instance._allWalls.Add(wallComp);
+
+        AddWallToWallPoint(startPoint, wallComp);
+        AddWallToWallPoint(endPoint, wallComp);
+
+
+        return wallComp;
+    }
+
+    public static void AddWallToWallPoint(WallPoint wallpoint, Wall wall)
+    {
+        wallpoint.AddConnectedWall(wall);
+    }
+
+    public static void ManageWallsAndWallPoints(Vector3 start, Vector3 end, Transform _strandedWalls = null)
+    {
+        float endpointSnapThreshold = AppHelper._nearestWallSnapThreshold;
+
+        #region Phase 1: Snapping Start Point
+        Vector3 bestSnapForStart = start;
+        float minStartDistSq = endpointSnapThreshold * endpointSnapThreshold;
+        foreach (Wall existingWall in WallManager.Instance._allWalls)
+        {
+            Vector3 existingWallStart = existingWall.GetStartPosition();
+            float distToStartSq = (start - existingWallStart).sqrMagnitude;
+            if (distToStartSq < minStartDistSq)
+            {
+                minStartDistSq = distToStartSq;
+                bestSnapForStart = existingWallStart;
+            }
+            Vector3 existingWallEnd = existingWall.GetEndPosition();
+            float distToEndSq = (start - existingWallEnd).sqrMagnitude;
+            if (distToEndSq < minStartDistSq)
+            {
+                minStartDistSq = distToEndSq;
+                bestSnapForStart = existingWallEnd;
+            }
+        }
+        start = bestSnapForStart;
+
+        // Find and apply best snap for end
+        Vector3 bestSnapForEnd = end;
+        float minEndDistSq = endpointSnapThreshold * endpointSnapThreshold;
+        foreach (Wall existingWall in WallManager.Instance._allWalls)
+        {
+            Vector3 existingWallStart = existingWall.GetStartPosition();
+            float distToStartSq = (end - existingWallStart).sqrMagnitude;
+            if (distToStartSq < minEndDistSq)
+            {
+                minEndDistSq = distToStartSq;
+                bestSnapForEnd = existingWallStart;
+            }
+            Vector3 existingWallEnd = existingWall.GetEndPosition();
+            float distToEndSq = (end - existingWallEnd).sqrMagnitude;
+            if (distToEndSq < minEndDistSq)
+            {
+                minEndDistSq = distToEndSq;
+                bestSnapForEnd = existingWallEnd;
+            }
+        }
+        end = bestSnapForEnd;
+        #endregion
+
+        WallPoint newWallStartPoint = WallPointManager.Instance.CreateOrGetwallPoints(start);
+        WallPoint newWallEndPoint = WallPointManager.Instance.CreateOrGetwallPoints(end);
+
+        List<Wall> wallsToCreate = new List<Wall>();
+
+        #region Detection Loop 1: Start Point T-Junction
+        Wall startPointWall = null;
+        foreach (Wall existingWall in WallManager.Instance._allWalls)
+        {
+            if (AppHelper.IsPointOnLineSegment(existingWall.GetStartPosition(), existingWall.GetEndPosition(), start) &&
+                Vector3.Distance(start, existingWall.GetStartPosition()) > endpointSnapThreshold &&
+                Vector3.Distance(start, existingWall.GetEndPosition()) > endpointSnapThreshold)
+            {
+                startPointWall = existingWall;
+                break;
+            }
+        }
+        #endregion
+
+        #region Detection Loop 2: End Point T-Junction
+        Wall endPointWall = null;
+        foreach (Wall existingWall in WallManager.Instance._allWalls)
+        {
+            if (AppHelper.IsPointOnLineSegment(existingWall.GetStartPosition(), existingWall.GetEndPosition(), end) &&
+                Vector3.Distance(end, existingWall.GetStartPosition()) > endpointSnapThreshold &&
+                Vector3.Distance(end, existingWall.GetEndPosition()) > endpointSnapThreshold)
+            {
+                endPointWall = existingWall;
+                break;
+            }
+        }
+        #endregion
+
+        #region Detection Loop 3: Find ALL Intersections
+        var intersections = new List<WallIntersection>();
+        foreach (Wall existingWall in WallManager.Instance._allWalls)
+        {
+            if (existingWall == startPointWall || existingWall == endPointWall)
+            {
+                continue;
+            }
+            if (AppHelper.TryGetLineIntersection(start, end, existingWall.GetStartPosition(), existingWall.GetEndPosition(), out Vector3 foundIntersection) &&
+                Vector3.Distance(foundIntersection, start) > endpointSnapThreshold &&
+                Vector3.Distance(foundIntersection, end) > endpointSnapThreshold &&
+                Vector3.Distance(foundIntersection, existingWall.GetStartPosition()) > endpointSnapThreshold &&
+                Vector3.Distance(foundIntersection, existingWall.GetEndPosition()) > endpointSnapThreshold)
+            {
+                intersections.Add(new WallIntersection
+                {
+                    Point = foundIntersection,
+                    IntersectedWall = existingWall,
+                    DistanceFromStartSq = (foundIntersection - start).sqrMagnitude
+                });
+            }
+        }
+        #endregion
+
+        // --- NEW, CORRECTED EXECUTION PHASE ---
+
+        // Step 1: Handle modifications to EXISTING walls (T-Junctions).
+        if (startPointWall != null)
+        {
+            Debug.Log("Handling T-Junction for start point.");
+            AppHelper.AddAdditionalWallPoint(newWallStartPoint, startPointWall);
+            AppHelper.AddCurrentWallpoint(startPointWall, newWallStartPoint);
+            AppHelper.SplitConnectedWall(startPointWall, newWallStartPoint);
+        }
+
+        if (endPointWall != null)
+        {
+            Debug.Log("Handling T-Junction for end point.");
+            AppHelper.AddAdditionalWallPoint(newWallEndPoint, endPointWall);
+            AppHelper.AddCurrentWallpoint(endPointWall, newWallEndPoint);
+            AppHelper.AddCurrentWallpoint(endPointWall, newWallEndPoint);
+            AppHelper.SplitConnectedWall(endPointWall, newWallEndPoint);
+        }
+
+        // Step 2: Handle creation of the NEW wall(s).
+        if (intersections.Count > 0)
+        {
+            // Case A: The new wall is split into multiple segments by cross-intersections.
+            Debug.Log($"Found {intersections.Count} intersections. Creating segments.");
+            intersections.Sort((a, b) => a.DistanceFromStartSq.CompareTo(b.DistanceFromStartSq));
+
+            WallPoint lastPoint = newWallStartPoint;
+            foreach (var intersection in intersections)
+            {
+                WallPoint intersectionWallPoint = WallPointManager.Instance.CreateOrGetwallPoints(intersection.Point);
+                wallsToCreate.Add(AppHelper.DrawWall(lastPoint, intersectionWallPoint, _strandedWalls));
+
+                AppHelper.AddAdditionalWallPoint(intersectionWallPoint, intersection.IntersectedWall);
+                AppHelper.AddCurrentWallpoint(intersection.IntersectedWall, intersectionWallPoint);
+                AppHelper.SplitConnectedWall(intersection.IntersectedWall, intersectionWallPoint);
+
+                lastPoint = intersectionWallPoint;
+            }
+            wallsToCreate.Add(AppHelper.DrawWall(lastPoint, newWallEndPoint, _strandedWalls));
+        }
+        else
+        {
+            // Case B: No cross-intersections. The new wall is a single segment.
+            // This correctly creates the wall for both standalone cases and T-junction cases.
+            /*Debug.Log("No intersections. Creating a single new wall.");
+
+            if (!AppHelper.WallExists(newWallStartPoint, newWallEndPoint))
+            {
+                wallsToCreate.Add(AppHelper.DrawWall(newWallStartPoint, newWallEndPoint, _strandedWalls));
+            }
+            else
+            {
+                Debug.Log("Skipped wall creation because it already exists.");
+            }*/
+            Debug.Log("No intersections. Creating a single new wall.");
+            wallsToCreate.Add(AppHelper.DrawWall(newWallStartPoint, newWallEndPoint, _strandedWalls));
+        }
+
+        // Step 3: Connect the points for all newly created walls.
+        foreach (Wall newWall in wallsToCreate)
+        {
+            newWall.GetStartWallPoint().AddConnectedWallPoint(newWall.GetEndWallPoint());
+            newWall.GetEndWallPoint().AddConnectedWallPoint(newWall.GetStartWallPoint());
+        }
+    }
+
+    public static bool WallExists(WallPoint a, WallPoint b)
+    {
+        foreach (Wall wall in WallManager.Instance._allWalls)
+        {
+            if ((wall.GetStartWallPoint() == a && wall.GetEndWallPoint() == b) ||
+                (wall.GetStartWallPoint() == b && wall.GetEndWallPoint() == a))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    #endregion
 }
