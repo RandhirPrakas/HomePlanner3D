@@ -82,6 +82,10 @@ public class SubStateManager
                 SetSubState(new EditWindowState(_orthoCam));
                 return;
             }
+            else if(gameObject.CompareTag("Room"))
+            {
+                SetSubState(new MoveRoomState(gameObject.GetComponent<Room>(), _orthoCam));
+            }
 
             if (gameObject.CompareTag("Ground") || gameObject.CompareTag("Wall"))
             {
