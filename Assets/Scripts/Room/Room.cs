@@ -19,6 +19,7 @@ public class Room : MonoBehaviour
 
         Debug.Log($"Room created with {_roomWallPoints.Count} points");
 
+        this.tag = "Room";
         SetWallPointPositions();
 
         AddMeshComponent();
@@ -41,6 +42,7 @@ public class Room : MonoBehaviour
 
         _meshFilter.mesh = _quadGenerator.GenerateFloor(_wallPointsPositions);
         _meshRenderer.material = AppHelper._defaultFloorMaterial;
+        this.AddComponent<MeshCollider>();
     }
 
     private void AddMeshComponent()
@@ -56,7 +58,6 @@ public class Room : MonoBehaviour
         {
             wp.RemoveConnectedRoom(this);
         }
-
 
         // Delete the gameobjet reference
         Destroy(this.gameObject);
