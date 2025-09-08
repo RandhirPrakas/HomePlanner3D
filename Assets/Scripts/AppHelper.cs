@@ -260,17 +260,17 @@ public static class AppHelper
         if (wall == null)
             return;
 
-        DrawWall(wall.GetStartWallPoint(), splitPoint);
-        DrawWall(splitPoint, wall.GetEndWallPoint());
+        DrawWall(wall.GetStartWallPoint(), splitPoint, strandedWall);
+        DrawWall(splitPoint, wall.GetEndWallPoint(), strandedWall);
 
         wall.GetStartWallPoint().RemoveConnectedWallPoint(wall.GetEndWallPoint());
         wall.GetEndWallPoint().RemoveConnectedWallPoint(wall.GetStartWallPoint());
-        wall.DeleteWall();
+        WallManager.Instance.DestroyWall(wall);
     }
 
     public static Wall DrawWall(WallPoint startPoint, WallPoint endPoint, Transform strandedWalls = null)
     {
-        GameObject wallGO = new GameObject($"Wall_{WallManager._wallIndex++}");
+        GameObject wallGO = new GameObject($"Wall");
         Wall wallComp = wallGO.AddComponent<Wall>();
         wallGO.transform.SetParent(strandedWalls);
         wallComp.SetStartAndEndPosition(startPoint, endPoint);
@@ -403,7 +403,7 @@ public static class AppHelper
             Debug.Log("Handling T-Junction for start point.");
             AppHelper.AddAdditionalWallPoint(newWallStartPoint, startPointWall);
             AppHelper.AddCurrentWallpoint(startPointWall, newWallStartPoint);
-            AppHelper.SplitConnectedWall(startPointWall, newWallStartPoint);
+            AppHelper.SplitConnectedWall(startPointWall, newWallStartPoint, _strandedWalls);
         }
 
         if (endPointWall != null)
@@ -412,7 +412,7 @@ public static class AppHelper
             AppHelper.AddAdditionalWallPoint(newWallEndPoint, endPointWall);
             AppHelper.AddCurrentWallpoint(endPointWall, newWallEndPoint);
             AppHelper.AddCurrentWallpoint(endPointWall, newWallEndPoint);
-            AppHelper.SplitConnectedWall(endPointWall, newWallEndPoint);
+            AppHelper.SplitConnectedWall(endPointWall, newWallEndPoint, _strandedWalls);
         }
 
         // Step 2: Handle creation of the NEW wall(s).
@@ -430,7 +430,7 @@ public static class AppHelper
 
                 AppHelper.AddAdditionalWallPoint(intersectionWallPoint, intersection.IntersectedWall);
                 AppHelper.AddCurrentWallpoint(intersection.IntersectedWall, intersectionWallPoint);
-                AppHelper.SplitConnectedWall(intersection.IntersectedWall, intersectionWallPoint);
+                AppHelper.SplitConnectedWall(intersection.IntersectedWall, intersectionWallPoint, _strandedWalls);
 
                 lastPoint = intersectionWallPoint;
             }

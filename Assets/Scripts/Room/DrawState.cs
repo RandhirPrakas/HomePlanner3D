@@ -17,7 +17,7 @@ public class DrawState : ICameraSubState
         Debug.Log("Draw State Initialized");
 
         _orthoCam = orthocam;
-        _strandedWalls = GameObject.Find("StrandedWalls").transform;
+        
     }
 
     public void Enter()
@@ -30,6 +30,7 @@ public class DrawState : ICameraSubState
         _secondNearestWall = null;
 
         GameManager.Instance._uiManager.SetDrawButtonActive(false);
+        _strandedWalls = GameObject.Find("StrandedWalls").transform;
     }
 
     public void Exit()
@@ -139,7 +140,7 @@ public class DrawState : ICameraSubState
         endPosition = AppHelper.SmartSnapToAxis(endPosition, WallPointManager.Instance._allWallPoints);
         endPosition = AppHelper.WrapPosition(_startPos, endPosition);
         endPosition.y = 0;
-        AppHelper.ManageWallsAndWallPoints(_startPos, endPosition);
+        AppHelper.ManageWallsAndWallPoints(_startPos, endPosition, _strandedWalls);
 
         AppEventHandler.InvokeOnWallCreation();
 

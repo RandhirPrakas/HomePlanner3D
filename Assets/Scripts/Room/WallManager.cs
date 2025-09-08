@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Xml;
 using UnityEngine;
 
 public class WallManager : MonoBehaviour
@@ -10,7 +11,6 @@ public class WallManager : MonoBehaviour
 
     public static int _wallIndex = 0;
 
-    // Make it Singleton
     private void Awake()
     {
         if (Instance == null)
@@ -42,7 +42,7 @@ public class WallManager : MonoBehaviour
                 if(room._roomWallPoints.Contains(wall.GetStartWallPoint()) && room._roomWallPoints.Contains(wall.GetEndWallPoint()))
                 {
                     room._roomWalls.Add(wall);
-                    wall.transform.SetParent(room.transform);
+                    //wall.transform.SetParent(room.transform);
                 }
             }
         }
@@ -52,14 +52,32 @@ public class WallManager : MonoBehaviour
     {
         if (wall == null) return;
 
-        // Notify endpoints to disconnect from this wall
+        // Disconnect endpoints first
         wall.GetStartWallPoint()?.RemoveConnectedWall(wall);
         wall.GetEndWallPoint()?.RemoveConnectedWall(wall);
 
-        // Remove from global list
         _allWalls.Remove(wall);
+        Destroy(wall.gameObject);
+        _allWalls.RemoveAll(w => w == null);
+    }
 
-        // Destroy the game object
-        GameObject.Destroy(wall.gameObject);
+    public void DeleteWall(Wall wall)
+    {
+        if (wall == null)
+            return;
+
+        WallPoint start = wall.GetStartWallPoint();
+        WallPoint end = wall.GetEndWallPoint();
+
+        // Remove Connected WalPoints
+        start.RemoveConnectedWallPoint(end);
+        end.RemoveConnectedWallPoint(start);
+
+        // Remove Connected Wall
+        start?.RemoveConnectedWall(wall);
+        end?.RemoveConnectedWall(wall);
+
+        Destroy(wall.gameObject);
+        AppEventHandler.InvokeOnWallCreation();
     }
 }

@@ -4,7 +4,7 @@ public class OrthoCam : CameraManager
 {
     private Vector2 _initialScreenTouchPos;
 
-    [SerializeField] private float _zoomSpeed = 5f;// default 5
+    [SerializeField] private float _zoomSpeed = 1f; // default 1
     [SerializeField] private float _minOrthoSize = 2f;
     [SerializeField] private float _maxOrthoSize = 50f;
 

@@ -95,5 +95,37 @@ public class WallPointManager : MonoBehaviour
         return nearest;
     }
 
+    public void DeleteWallPoint(WallPoint wallPoint)
+    {
+        if (wallPoint == null)
+        {
+            Debug.Log("<color=red>wallPoint is Null</color>");
+            return;
+        }
+
+        // Remove Room Reference
+        foreach (Room room in wallPoint.GetConnectedRooms().ToList())
+        {
+            room._roomWallPoints.Remove(wallPoint);
+        }
+
+        // Remove Wall Reference
+        foreach (Wall wall in wallPoint.GetConnectedWalls().ToList())
+        {
+            WallManager.Instance.DestroyWall(wall);
+        }
+
+        // Remove Connected wallPoint references
+        foreach (WallPoint wp in wallPoint.GetConnectedWallPoints().ToList())
+        {
+            wp.RemoveConnectedWallPoint(wallPoint);
+        }
+
+        _allWallPoints.Remove(wallPoint);
+        Destroy(wallPoint._activeSphere);
+        Destroy(wallPoint.gameObject);
+
+        AppEventHandler.InvokeOnWallCreation();
+    }
 
 }

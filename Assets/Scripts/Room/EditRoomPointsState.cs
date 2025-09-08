@@ -32,6 +32,9 @@ public class EditRoomPointsState : ICameraSubState
             // Link sphere to wall point
             point.SetHighlightVisual(sphere);
         }
+
+        if (_orthoCam == null)
+            _orthoCam = GameManager.Instance.GetOrthoCamera();
     }
 
     public void Exit()
@@ -43,7 +46,21 @@ public class EditRoomPointsState : ICameraSubState
             GameObject.Destroy(_highlightParent);
     }
 
-    public void Update() { }
+    public void Update() 
+    {
+        if(Input.GetKeyDown(KeyCode.D))
+        {
+            if(_selectedPoint != null)
+            {
+                Debug.Log("<color=green> Deleting Current Active wall Point</color>");
+                WallPointManager.Instance.DeleteWallPoint(_selectedPoint);
+            }
+            else
+            {
+                Debug.Log("<color=red> There is no Selected Point </color>");
+            }
+        }
+    }
 
     public void OnTouchStart(Vector3 worldPos, Vector2 screenPos)
     {
@@ -120,7 +137,7 @@ public class EditRoomPointsState : ICameraSubState
         {
             _selectedPoint._activeSphere.GetComponent<MeshRenderer>().material.color = Color.yellow;
         }
-        _selectedPoint = null;
+        //_selectedPoint = null;
 
         AppEventHandler.InvokeOnWallCreation();
     }
@@ -146,7 +163,7 @@ public class EditRoomPointsState : ICameraSubState
 
         return closestPoint;
     }
-
+        
     public void Init(Vector3 worldPos, Vector2 screenPos)
     {
         throw new System.NotImplementedException();

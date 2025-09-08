@@ -31,11 +31,6 @@ public class Wall : MonoBehaviour
 
     #region Getter And Setters
 
-    public Room GetParentRoom()
-    {
-        return _parentRoom;
-    }
-
     public void SetParentRoom(Room room)
     {
         _parentRoom = room;
@@ -263,7 +258,7 @@ public class Wall : MonoBehaviour
             WallManager.Instance._allWalls.Remove(this);
         }
 
-        WallManager._wallIndex--;
+        //WallManager._wallIndex--;
         Destroy(gameObject);
     }
 }

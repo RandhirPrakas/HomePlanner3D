@@ -41,7 +41,16 @@ public class MoveWallState : ICameraSubState
         Debug.Log("Exited MoveWallState");
     }
 
-    public void Update() { }
+    public void Update() 
+    {
+        if(Input.GetKeyDown(KeyCode.F))
+        {
+            if(_activeWall != null)
+            {
+                WallManager.Instance.DeleteWall(_activeWall);
+            }
+        }
+    }
 
     public void OnTouchStart(Vector3 worldPos, Vector2 screenPos)
     {
@@ -77,7 +86,6 @@ public class MoveWallState : ICameraSubState
         if (_activeWall != null)
         {
             _activeWall.GetComponent<LineRenderer>().material.color = _defaultColor;
-            _activeWall = null;
         }
     }
 
@@ -96,6 +104,11 @@ public class MoveWallState : ICameraSubState
         _activeWall.EndWallPoint.SetPosition(endPos);
 
         _activeWall.UpdateFromPoints();
+
+        foreach(Opening opening in _activeWall._allOpenings)
+        {
+            opening.transform.position += positionOffset;
+        }
     }
 
     public void Init(Vector3 worldPos, Vector2 screenPos)
