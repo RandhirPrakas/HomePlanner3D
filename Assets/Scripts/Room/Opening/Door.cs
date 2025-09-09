@@ -12,7 +12,7 @@ public class Door : Opening
         OpeningType = OpeningType.Door;
         // Convert world position into local space of the wall
         OpeningPosition = wall.transform.InverseTransformPoint(worldPosition);
-
+        OpeningPosition = new Vector3(OpeningPosition.x, 3f, OpeningPosition.z);
         // Attach opening to wall
         transform.SetParent(wall.transform, worldPositionStays: true);
 
@@ -24,6 +24,6 @@ public class Door : Opening
         ConnectedWall.Add(wall);
 
         // Add it to OpeningManager
-        OpeningManager.Instance._allOpenings.Add(this);
+        OpeningManager.Instance.AddOpening(this);
     }
 }

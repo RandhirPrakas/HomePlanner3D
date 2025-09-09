@@ -6,12 +6,14 @@ using UnityEngine;
 
 public class PerspectiveState : CameraState
 {
-    private ProceduarlwallGenerator _wallGenerator;
     public override void Enter()
     {
+        ProceduarlwallGenerator.Init();
         Camera.main.orthographic = false;
         HideGameobjectsFromOrthoState();
         GenerateWalls();
+        //ThreeD_Settings();
+        //GenerateOpeningColliders();
         SetCameraOrientation();
         GameManager.Instance.GetSubStateManager().SetPerspIdleState();
     }
@@ -30,28 +32,24 @@ public class PerspectiveState : CameraState
 
     public void GenerateWalls()
     {
-        if (_wallGenerator == null)
-        {
-            _wallGenerator = new ProceduarlwallGenerator();
-        }
 
         foreach (Wall wall in WallManager.Instance._allWalls)
         {
-            _wallGenerator.GenerateWallSegment(wall.GetStartPosition(), wall.GetEndPosition(), wall.gameObject.transform);
+            ProceduarlwallGenerator.GenerateWallSegment(wall.GetStartPosition(), wall.GetEndPosition(), wall.gameObject.transform);
         }
     }
 
     private void HideGameobjectsFromOrthoState()
     {
         // Disable All the Line Renderers from Wall
-        foreach(Wall wall in WallManager.Instance._allWalls)
+        foreach (Wall wall in WallManager.Instance._allWalls)
         {
             wall._lineRenderer.enabled = false;
             wall._boxCollider.enabled = false;
         }
 
         // Disable Openings 2d meshes
-        foreach(Opening opening in OpeningManager.Instance._allOpenings)
+        foreach (Opening opening in OpeningManager.Instance.GetAllOpenings())
         {
             opening.GetComponent<MeshRenderer>().enabled = false;
         }
@@ -60,8 +58,6 @@ public class PerspectiveState : CameraState
 
     /*public void GenerateWalls()
     {
-        if (_wallGenerator == null)
-            _wallGenerator = new ProceduarlwallGenerator();
 
         foreach (Wall wall in WallManager.Instance._allWalls)
         {
@@ -71,7 +67,7 @@ public class PerspectiveState : CameraState
             {
                 // no openings → full wall
                 allSegments.AddRange(
-                    _wallGenerator.GenerateWallSegment(
+                    ProceduarlwallGenerator.GenerateWallSegment(
                         wall.GetStartPosition(),
                         wall.GetEndPosition(),
                         wall.transform));
@@ -98,7 +94,7 @@ public class PerspectiveState : CameraState
                         {
                             left = along - half,
                             right = along + half,
-                            centerY = openingLS.y,   // 🔹 interpret as bottom (Door) or center (Window)
+                            centerY = openingLS.y,
                             height = o.Height,
                             type = o.OpeningType
                         };
@@ -117,7 +113,7 @@ public class PerspectiveState : CameraState
                     if (Vector3.Distance(cursorLS, openingStartLS) > 0.01f)
                     {
                         allSegments.AddRange(
-                            _wallGenerator.GenerateWallSegment(
+                            ProceduarlwallGenerator.GenerateWallSegment(
                                 wall.transform.TransformPoint(cursorLS),
                                 wall.transform.TransformPoint(openingStartLS),
                                 wall.transform));
@@ -128,7 +124,7 @@ public class PerspectiveState : CameraState
                     {
                         // Doors → gap starts at floor
                         allSegments.AddRange(
-                            _wallGenerator.GenerateWallSegment(
+                            ProceduarlwallGenerator.GenerateWallSegment(
                                 wall.transform.TransformPoint(openingStartLS),
                                 wall.transform.TransformPoint(openingEndLS),
                                 wall.transform,
@@ -145,7 +141,7 @@ public class PerspectiveState : CameraState
                         if (bottom > 0.01f)
                         {
                             allSegments.AddRange(
-                                _wallGenerator.GenerateWallSegment(
+                                ProceduarlwallGenerator.GenerateWallSegment(
                                     wall.transform.TransformPoint(openingStartLS),
                                     wall.transform.TransformPoint(openingEndLS),
                                     wall.transform,
@@ -157,7 +153,7 @@ public class PerspectiveState : CameraState
                         if (AppHelper._wallHeight - top > 0.01f)
                         {
                             allSegments.AddRange(
-                                _wallGenerator.GenerateWallSegment(
+                                ProceduarlwallGenerator.GenerateWallSegment(
                                     wall.transform.TransformPoint(openingStartLS),
                                     wall.transform.TransformPoint(openingEndLS),
                                     wall.transform,
@@ -174,7 +170,7 @@ public class PerspectiveState : CameraState
                 if (Vector3.Distance(cursorLS, endLS) > 0.01f)
                 {
                     allSegments.AddRange(
-                        _wallGenerator.GenerateWallSegment(
+                        ProceduarlwallGenerator.GenerateWallSegment(
                             wall.transform.TransformPoint(cursorLS),
                             wall.transform.TransformPoint(endLS),
                             wall.transform));
@@ -182,8 +178,69 @@ public class PerspectiveState : CameraState
             }
 
             // Combine All Created Walls 
-            _wallGenerator.CombineChildMeshes(wall.transform, allSegments);
+            ProceduarlwallGenerator.CombineChildMeshes(wall.transform, allSegments);
         }
     }*/
+
+    public static void GenerateOpeningColliders()
+    {
+        // Check if the WallManager instance exists to prevent errors.
+        if (WallManager.Instance == null)
+        {
+            Debug.LogError("WallManager.Instance not found. Cannot generate opening colliders.");
+            return;
+        }
+
+        // --- Step 1: Iterate Through Every Wall ---
+        foreach (Wall wall in WallManager.Instance._allWalls)
+        {
+            // If a wall has no openings, skip it.
+            if (wall._allOpenings == null || wall._allOpenings.Count == 0)
+            {
+                continue;
+            }
+
+            // --- Step 2: Iterate Through Each Opening in the Wall ---
+            foreach (var opening in wall._allOpenings)
+            {
+
+                BoxCollider boxCollider = opening.GetComponent<BoxCollider>();
+                if (boxCollider == null)
+                {
+                    boxCollider = opening.AddComponent<BoxCollider>();
+                }
+                else
+                {
+                    boxCollider.enabled = true;
+                }
+                boxCollider.isTrigger = true;
+
+                Vector3 openingCenterLS = wall.transform.InverseTransformPoint(opening.OpeningPosition);
+
+                if (opening.OpeningType == OpeningType.Door)
+                {
+                    openingCenterLS.y += 0;
+                }
+                opening.transform.localPosition = openingCenterLS;
+                if (opening.OpeningType == OpeningType.Door)
+                    boxCollider.center = new Vector3(0, opening.Height / 2 - opening.transform.position.y, 0);
+                else
+                    boxCollider.center = new Vector3(0, 0, 0);
+
+                Vector3 colliderSize = new Vector3(opening.Width - 0.5f, opening.Height, AppHelper._wallThickness);
+
+                boxCollider.size = colliderSize;
+            }
+        }
+    }
+
+
+    private void ThreeD_Settings()
+    {
+        foreach (Opening opening in OpeningManager.Instance.GetAllOpenings())
+        {
+            opening.GetComponent<SphereCollider>().enabled = false;
+        }
+    }
 
 }

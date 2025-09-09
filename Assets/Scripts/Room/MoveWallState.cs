@@ -50,6 +50,7 @@ public class MoveWallState : ICameraSubState
                 WallManager.Instance.DeleteWall(_activeWall);
             }
         }
+        _orthoCam.Update();
     }
 
     public void OnTouchStart(Vector3 worldPos, Vector2 screenPos)

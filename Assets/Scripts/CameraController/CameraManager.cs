@@ -5,7 +5,7 @@ using UnityEngine;
 public class CameraManager : MonoBehaviour
 {
     public Camera _mainCamera;
-    public float _translationSpeed = 50f; // default value 50f for smooth translation
+    public float _translationSpeed = 15f; // default value 15f for smooth translation, at this value looks smooth
 
     public Vector3 _touchStartWorldPos;
 

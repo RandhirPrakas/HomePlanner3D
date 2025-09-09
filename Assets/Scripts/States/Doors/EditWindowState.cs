@@ -17,7 +17,7 @@ public class EditWindowState : ICameraSubState
     {
         Debug.Log("Entered EditWindowState");
         _highlightParent = new GameObject("WindowHighlights");
-        
+
     }
 
     public void Exit()
@@ -27,7 +27,10 @@ public class EditWindowState : ICameraSubState
             GameObject.Destroy(_highlightParent);
     }
 
-    public void Update() { }
+    public void Update()
+    {
+        _orthoCam.Update();
+    }
 
     public void OnTouchStart(Vector3 worldPos, Vector2 screenPos)
     {
@@ -46,6 +49,7 @@ public class EditWindowState : ICameraSubState
         if (_selectedWindow.ParentWall != nearestWall)
         {
             Wall oldWall = _selectedWindow.ParentWall;
+            _selectedWindow._lastWall = oldWall;
             Debug.Log($"Window reassigned from {oldWall?.name} to {nearestWall.name}");
 
             if (oldWall != null)

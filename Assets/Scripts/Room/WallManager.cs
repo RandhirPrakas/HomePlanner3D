@@ -46,11 +46,18 @@ public class WallManager : MonoBehaviour
                 }
             }
         }
+
+        OpeningManager.Instance.TryReattachAll();
     }
 
     public void DestroyWall(Wall wall)
     {
         if (wall == null) return;
+
+        foreach (var opening in new List<Opening>(wall._allOpenings))
+        {
+            opening.Detach();
+        }
 
         // Disconnect endpoints first
         wall.GetStartWallPoint()?.RemoveConnectedWall(wall);
@@ -66,6 +73,11 @@ public class WallManager : MonoBehaviour
         if (wall == null)
             return;
 
+        foreach (var opening in new List<Opening>(wall._allOpenings))
+        {
+            opening.Detach();
+        }
+
         WallPoint start = wall.GetStartWallPoint();
         WallPoint end = wall.GetEndWallPoint();
 
@@ -80,4 +92,39 @@ public class WallManager : MonoBehaviour
         Destroy(wall.gameObject);
         AppEventHandler.InvokeOnWallCreation();
     }
+
+    public Wall FindNearestWall(Vector3 point, out Vector3 closestPoint, float snapThreshold = 5f)
+    {
+        Wall nearest = null;
+        float minDist = float.MaxValue;
+        closestPoint = point;
+
+        foreach (Wall wall in _allWalls)
+        {
+            if (wall == null) continue;
+
+            Vector3 a = wall.GetStartPosition();
+            Vector3 b = wall.GetEndPosition();
+
+            Vector3 ab = b - a;
+            float len2 = ab.sqrMagnitude;
+            if (len2 < 1e-6f) continue;
+
+            float t = Mathf.Clamp01(Vector3.Dot(point - a, ab) / len2);
+            Vector3 proj = a + ab * t;
+
+            float dist = Vector3.Distance(proj, point);
+
+            if (dist < minDist)
+            {
+                minDist = dist;
+                nearest = wall;
+                closestPoint = proj;
+            }
+        }
+
+        //if (minDist > snapThreshold) nearest = null;
+        return nearest;
+    }
+
 }

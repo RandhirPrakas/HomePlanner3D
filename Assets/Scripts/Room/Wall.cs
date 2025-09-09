@@ -252,6 +252,11 @@ public class Wall : MonoBehaviour
 
     public void DeleteWall()
     {
+        // Rescue openings
+        foreach (var opening in new List<Opening>(_allOpenings))
+        {
+            opening.Detach();
+        }
 
         if (WallManager.Instance._allWalls.Contains(this))
         {

@@ -10,7 +10,11 @@ public abstract class Opening : MonoBehaviour
     [SerializeField] private float _width = 2f;
     [SerializeField] private float _height = 2f;
 
+    [SerializeField] private GameObject _strandedOpenings;
+    public Transform StrandedOpening { get => _strandedOpenings.transform; }
+
     public Wall _parentWall;
+    public Wall _lastWall;
 
     #region Properties
     public float Width { get => _width; set => _width = value; }
@@ -22,8 +26,29 @@ public abstract class Opening : MonoBehaviour
     public List<Wall> ConnectedWall { get => _connectedWalls; }
     #endregion
 
+    private void Awake()
+    {
+        _strandedOpenings = GameObject.Find("StrandedOpenings");
+    }
+
     /// <summary>
     /// Initialize the opening on a given wall at a position.
     /// </summary>
     public abstract void Initialize(Wall wall, Vector3 worldPosition);
+
+    public void Detach()
+    {
+        if (_parentWall != null)
+        {
+            _parentWall._allOpenings.Remove(this);
+            _lastWall = _parentWall;
+            _parentWall = null;
+        }
+
+        // Move into stranded container
+        if (StrandedOpening != null)
+        {
+            transform.SetParent(StrandedOpening, true);
+        }
+    }
 }

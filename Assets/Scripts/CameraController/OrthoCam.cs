@@ -8,6 +8,14 @@ public class OrthoCam : CameraManager
     [SerializeField] private float _minOrthoSize = 2f;
     [SerializeField] private float _maxOrthoSize = 50f;
 
+    [SerializeField] private float _moveThreshold = 10f;
+    [SerializeField] private float _lerpSpeed = 3f; // default = 3, at this value looks smooth
+
+    private Vector3 _targetPosition;
+    
+    [SerializeField] private float _targetOrthoSize;
+
+
     #region Get/Set Touch Position
     public Vector2 GetInitialScreenTouchPosition()
     {
@@ -20,9 +28,37 @@ public class OrthoCam : CameraManager
     }
     #endregion
 
-    public void MoveCameraByDistance(Vector3 distance)
+    public void Update()
+    {
+        if (_mainCamera == null || !_mainCamera.orthographic) return;
+
+        _mainCamera.orthographicSize = Mathf.Lerp(
+            _mainCamera.orthographicSize,
+            _targetOrthoSize,
+            Time.deltaTime * 5f
+        );
+    }
+
+    /*public void MoveCameraByDistance(Vector3 distance)
     {
         _mainCamera.transform.position += distance * _translationSpeed * Time.deltaTime;
+    }*/
+
+    public void MoveCameraByDistance(Vector3 distance, Vector2 currentTouchPos)
+    {
+        // Check if drag exceeds threshold (prevents jitter)
+        float screenDist = Vector2.Distance(currentTouchPos, _initialScreenTouchPos);
+        if (screenDist < _moveThreshold) return;
+
+        // Set new target position
+        _targetPosition = _mainCamera.transform.position + distance * _translationSpeed;
+
+        // Smoothly move with Lerp
+        _mainCamera.transform.position = Vector3.Lerp(
+            _mainCamera.transform.position,
+            _targetPosition,
+            _lerpSpeed * Time.deltaTime
+        );
     }
 
     public Vector3 GetDistance(Vector2 finalPosition)
@@ -35,7 +71,7 @@ public class OrthoCam : CameraManager
     {
         if (_mainCamera == null || !_mainCamera.orthographic) return;
 
-        _mainCamera.orthographicSize -= deltaMagnitudeDiff * _zoomSpeed * Time.deltaTime;
-        _mainCamera.orthographicSize = Mathf.Clamp(_mainCamera.orthographicSize, _minOrthoSize, _maxOrthoSize);
+        _targetOrthoSize -= deltaMagnitudeDiff * _zoomSpeed * Time.deltaTime;
+        _targetOrthoSize = Mathf.Clamp(_targetOrthoSize, _minOrthoSize, _maxOrthoSize);
     }
 }

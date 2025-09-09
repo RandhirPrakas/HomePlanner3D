@@ -34,7 +34,7 @@ public class Ortho_IdleState : ICameraSubState
     public void OnTouchHold(Vector3 worldPos, Vector2 screenPos)
     {
         Vector3 distance = _orthoCam.GetDistance(screenPos);
-        _orthoCam.MoveCameraByDistance(distance);
+        _orthoCam.MoveCameraByDistance(distance, screenPos);
         _orthoCam.SetInitialTouchPosition(screenPos);
     }
 
@@ -50,6 +50,6 @@ public class Ortho_IdleState : ICameraSubState
 
     public void Update()
     {
-        // Idle update logic if needed
+        _orthoCam.Update();
     }
 }

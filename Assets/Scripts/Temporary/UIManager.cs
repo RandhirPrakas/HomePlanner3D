@@ -40,6 +40,12 @@ public class UIManager : MonoBehaviour
         }
         WallPointManager.Instance._allWallPoints.Clear();
 
+        foreach (Opening opening in OpeningManager.Instance.GetAllOpenings())
+        {
+            Destroy(opening.gameObject);
+        }
+        OpeningManager.Instance.GetAllOpenings().Clear();
+
         foreach(Wall wall in WallManager.Instance._allWalls)
         {
             Destroy(wall.gameObject);

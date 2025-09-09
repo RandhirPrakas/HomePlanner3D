@@ -132,7 +132,7 @@ public class DrawState : ICameraSubState
 
     public void Update()
     {
-
+        _orthoCam.Update();
     }
 
     private void DrawSingleWall(Vector3 endPosition)

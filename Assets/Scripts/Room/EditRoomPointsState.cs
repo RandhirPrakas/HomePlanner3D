@@ -60,6 +60,7 @@ public class EditRoomPointsState : ICameraSubState
                 Debug.Log("<color=red> There is no Selected Point </color>");
             }
         }
+        _orthoCam.Update();
     }
 
     public void OnTouchStart(Vector3 worldPos, Vector2 screenPos)

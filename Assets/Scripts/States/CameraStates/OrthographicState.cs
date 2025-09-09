@@ -15,6 +15,8 @@ public class OrthographicState : CameraState
         RemoveWallMeshes();
         ShowGameobjectsFromOrthoState();
         GameManager.Instance.GetSubStateManager().SetOrthoIdleState();
+
+        Two_D_Settings();
     }
 
     public override void Exit()
@@ -53,10 +55,21 @@ public class OrthographicState : CameraState
         // Sometime Instance is null, shouldn't be but, may be because its instace is not yet created but still called.
         if (OpeningManager.Instance != null)
         {
-            foreach (Opening opening in OpeningManager.Instance._allOpenings)
+            foreach (Opening opening in OpeningManager.Instance.GetAllOpenings())
             {
                 opening.GetComponent<MeshRenderer>().enabled = true;
             }
+        }
+    }
+
+    // Disable BoxColliders if it exists and Enable Sphere colliders for all opening
+    private void Two_D_Settings()
+    {
+        foreach(Opening opening in OpeningManager.Instance.GetAllOpenings())
+        {
+            opening.GetComponent<SphereCollider>().enabled = true;
+            if(opening.GetComponent<BoxCollider>()!= null)
+                opening.GetComponent<BoxCollider>().enabled = false;
         }
     }
 }

@@ -25,6 +25,6 @@ public class Window : Opening
         ConnectedWall.Add(wall);
 
         // Add it to OpeningManager
-        OpeningManager.Instance._allOpenings.Add(this);
+        OpeningManager.Instance.AddOpening(this);
     }
 }

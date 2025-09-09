@@ -6,7 +6,7 @@ public class EditDoorState : ICameraSubState
     private Door _selectedDoor;
     private GameObject _highlightParent;
     private OrthoCam _orthoCam;
-    
+
     public EditDoorState(OrthoCam orthoCam)
     {
         _orthoCam = (orthoCam == null) ? GameManager.Instance.GetOrthoCamera() : orthoCam;
@@ -25,13 +25,16 @@ public class EditDoorState : ICameraSubState
             GameObject.Destroy(_highlightParent);
     }
 
-    public void Update() { }
+    public void Update()
+    {
+        _orthoCam.Update();
+    }
 
     public void OnTouchStart(Vector3 worldPos, Vector2 screenPos)
     {
         _selectedDoor = GetDoorUnderTouch(worldPos);
     }
-     
+
     public void OnTouchHold(Vector3 worldPos, Vector2 screenPos)
     {
         if (_selectedDoor == null) return;
@@ -44,7 +47,7 @@ public class EditDoorState : ICameraSubState
         if (_selectedDoor.ParentWall != nearestWall)
         {
             Wall oldWall = _selectedDoor.ParentWall;
-
+            _selectedDoor._lastWall = oldWall;
             Debug.Log($"Door Moved from {oldWall?.name} to {nearestWall.name}");
 
             // Remove from old wall list safely

@@ -1,16 +1,11 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 
-public class ProceduarlwallGenerator
+public static class ProceduarlwallGenerator
 {
-    public Vector3 p1, p2, d1;
-    public Material _quadMaterial;
+    public static Material _quadMaterial;
 
-    public ProceduarlwallGenerator()
-    {
-        Init();
-    }
-    private void Init()
+    public static void Init()
     {
         _quadMaterial = Resources.Load<Material>("ProceduralMaterials/QuadMaterial");
         if (_quadMaterial == null)
@@ -64,7 +59,7 @@ public class ProceduarlwallGenerator
     }*/
 
 
-    public List<GameObject> GenerateWallSegment(Vector3 p1, Vector3 p2, Transform wall, float? height = null, float baseHeight = 0f)
+    public static List<GameObject> GenerateWallSegment(Vector3 p1, Vector3 p2, Transform wall, float? height = null, float baseHeight = 0f)
     {
         float wallHeight = height ?? AppHelper._wallHeight;
 
@@ -113,7 +108,7 @@ public class ProceduarlwallGenerator
 
 
 
-    public GameObject GenerateQuads(Vector3 p1, Vector3 p2, Vector3 p3, Vector3 p4, Transform wall)
+    public static GameObject GenerateQuads(Vector3 p1, Vector3 p2, Vector3 p3, Vector3 p4, Transform wall)
     {
         GameObject quadObj = new GameObject("WallPart");
         quadObj.transform.parent = wall;
@@ -128,7 +123,7 @@ public class ProceduarlwallGenerator
         return quadObj;
     }
 
-    public void CombineChildMeshes(Transform parent, List<GameObject> children)
+    public static void CombineChildMeshes(Transform parent, List<GameObject> children)
     {
         List<CombineInstance> combine = new List<CombineInstance>();
 
@@ -161,4 +156,5 @@ public class ProceduarlwallGenerator
             GameObject.DestroyImmediate(child);
         }
     }
+
 }

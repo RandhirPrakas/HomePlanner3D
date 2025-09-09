@@ -82,10 +82,6 @@ public class SubStateManager
                 SetSubState(new EditWindowState(_orthoCam));
                 return;
             }
-            else if(gameObject.CompareTag("Room"))
-            {
-                SetSubState(new MoveRoomState(gameObject.GetComponent<Room>(), _orthoCam));
-            }
 
             if (gameObject.CompareTag("Ground") || gameObject.CompareTag("Wall"))
             {
@@ -119,6 +115,18 @@ public class SubStateManager
                     SetSubState(new MoveWallState(wall, _orthoCam));
                 }
             }
+        }
+        else if(GameManager.Instance.GetCameraStateManager().GetCurrentState() is PerspectiveState)
+        {
+/*#if UNITY_EDITOR
+            ClearConsole();
+#endif
+            Debug.Log(gameObject.name);
+
+            if(gameObject.CompareTag("Door")|| gameObject.CompareTag("Window"))
+            {
+                SetSubState(new EditOpeningIn3DState(Camera.main));
+            }*/
         }
     }
         
