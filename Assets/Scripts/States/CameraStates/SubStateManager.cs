@@ -72,18 +72,18 @@ public class SubStateManager
 #if UNITY_EDITOR
             ClearConsole();
 #endif
-            if (gameObject.CompareTag("Door"))
+            if (gameObject.CompareTag(Constants.TAG_DOOR))
             {
-                SetSubState(new EditDoorState(_orthoCam));
+                SetSubState(new EditOpeningState<Door>(_orthoCam));
                 return;
             }
-            else if(gameObject.CompareTag("Window"))
+            else if(gameObject.CompareTag(Constants.TAG_WINDOW))
             {
-                SetSubState(new EditWindowState(_orthoCam));
+                SetSubState(new EditOpeningState<Window>(_orthoCam));
                 return;
             }
 
-            if (gameObject.CompareTag("Ground") || gameObject.CompareTag("Wall"))
+            if (gameObject.CompareTag(Constants.TAG_GROUND) || gameObject.CompareTag(Constants.TAG_WALL))
             {
                 foreach (WallPoint wp in WallPointManager.Instance._allWallPoints)
                 {
@@ -95,11 +95,11 @@ public class SubStateManager
                 }
             }
 
-            if (gameObject.CompareTag("Ground"))
+            if (gameObject.CompareTag(Constants.TAG_GROUND))
             {
                 SetOrthoIdleState();
             }
-            else if (gameObject.CompareTag("Wall"))
+            else if (gameObject.CompareTag(Constants.TAG_WALL))
             {
                 Wall wall = gameObject.GetComponentInParent<Wall>();
                 var currentState = GetCurrentSubState();
@@ -118,15 +118,15 @@ public class SubStateManager
         }
         else if(GameManager.Instance.GetCameraStateManager().GetCurrentState() is PerspectiveState)
         {
-/*#if UNITY_EDITOR
+#if UNITY_EDITOR
             ClearConsole();
 #endif
             Debug.Log(gameObject.name);
 
-            if (gameObject.CompareTag("Door") || gameObject.CompareTag("Window"))
+            if (gameObject.CompareTag(Constants.TAG_DOOR) || gameObject.CompareTag(Constants.TAG_WINDOW))
             {
                 SetSubState(new EditOpeningIn3DState(Camera.main));
-            }*/
+            }
         }
     }
         

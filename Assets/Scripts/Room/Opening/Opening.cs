@@ -33,10 +33,6 @@ public abstract class Opening : MonoBehaviour
     {
         _strandedOpenings = GameObject.Find("StrandedOpenings");
     }
-
-    /// <summary>
-    /// Initialize the opening on a given wall at a position.
-    /// </summary>
     public abstract void Initialize(Wall wall, Vector3 worldPosition);
 
     public void Detach()

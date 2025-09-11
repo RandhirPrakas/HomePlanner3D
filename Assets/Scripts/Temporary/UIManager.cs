@@ -16,8 +16,8 @@ public class UIManager : MonoBehaviour
         _toggleButton.onClick.AddListener(() => ToggleCamerStates());
         _clearButton.onClick.AddListener(() => ResetSceneAndCreateNewRoom());
         _drawButton.onClick.AddListener(() => GameManager.Instance.SetSubState(new DrawState(GameManager.Instance.GetOrthoCamera())));
-        _addDoorButton.onClick.AddListener(() => GameManager.Instance.SetSubState(new AddDoorState(GameManager.Instance.GetOrthoCamera())));
-        _addWindowButton.onClick.AddListener(() => GameManager.Instance.SetSubState(new AddWindowState(GameManager.Instance.GetOrthoCamera())));
+        _addDoorButton.onClick.AddListener(() => GameManager.Instance.SetSubState(new AddOpeningState<Door>(GameManager.Instance.GetOrthoCamera(), Constants.PATH_DOOR_VISUALIZER)));
+        _addWindowButton.onClick.AddListener(() => GameManager.Instance.SetSubState(new AddOpeningState<Window>(GameManager.Instance.GetOrthoCamera(), Constants.PATH_DOOR_VISUALIZER)));
     }
 
     private void OnDisable()

@@ -16,10 +16,13 @@ public static class AppHelper
 
     #endregion
 
-    #region DoorDefaults
+    #region OpeningDefaults
 
     public static float _doorWidth = 2.5f;
     public static float _doorHeight = 4f;
+
+    public static float _windowWidth = 2f;
+    public static float _windowHeight = 2f;
 
     #endregion
 
@@ -291,6 +294,49 @@ public static class AppHelper
         }
 
         return false;
+    }
+
+    public static bool CanPlaceOpening<T>(Wall wall, Vector3 position) where T : Opening
+    {
+        if (wall == null) return false;
+
+        float openingWidth = GetDefaultWidth<T>();
+
+        // --- Check against wall ends ---
+        if (GetXZDistance(position, wall.GetStartPosition()) < openingWidth + 0.25f ||
+            GetXZDistance(position, wall.GetEndPosition()) < openingWidth + 0.25f)
+            return false;
+
+        // --- Check against existing openings on the wall ---
+        foreach (Opening existing in wall._allOpenings)
+        {
+            if (existing == null) continue;
+
+            // Skip if it's the same opening (during edit)
+            if (existing is T typed && typed.OpeningPosition == position)
+                continue;
+
+            float minSpacing = (existing.Width / 2f) + (openingWidth / 2f) + 0.25f;
+            if (GetXZDistance(position, existing.transform.position) < minSpacing)
+                return false;
+        }
+
+        return true;
+    }
+
+    private static float GetDefaultWidth<T>() where T : Opening
+    {
+        if (typeof(T) == typeof(Door)) return _doorWidth;
+        if (typeof(T) == typeof(Window)) return _windowWidth;
+
+        return 2f; // fallback for custom opening types
+    }
+
+    public static float GetXZDistance(Vector3 a, Vector3 b)
+    {
+        Vector2 aXZ = new Vector2(a.x, a.z);
+        Vector2 bXZ = new Vector2(b.x, b.z);
+        return Vector2.Distance(aXZ, bXZ);
     }
 
     #region Helper for Drawing 
