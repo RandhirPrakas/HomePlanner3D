@@ -1,6 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
-using System.Net;
 using Unity.VisualScripting;
 using UnityEngine;
 
@@ -9,12 +7,23 @@ public class PerspectiveState : CameraState
     public override void Enter()
     {
         ProceduarlwallGenerator.Init();
-        Camera.main.orthographic = false;
+
+        // Switch camera to perspective
+        if (Camera.main != null)
+            Camera.main.orthographic = false;
+
         HideGameobjectsFromOrthoState();
+
         GenerateWalls();
+
         ThreeD_Settings();
+
+        // Generate colliders for openings (doors/windows)
         GenerateOpeningColliders();
+
         SetCameraOrientation();
+
+        // Return to perspective idle substate (keep your original call)
         GameManager.Instance.GetSubStateManager().SetPerspIdleState();
     }
 
@@ -25,184 +34,89 @@ public class PerspectiveState : CameraState
 
     private void SetCameraOrientation()
     {
+        if (Camera.main == null) return;
+
         Camera.main.transform.position = new Vector3(0, 25, -25);
         Camera.main.transform.rotation = Quaternion.Euler(45, 0, 0);
         Camera.main.fieldOfView = 45;
     }
 
-    /*public void GenerateWalls()
-    {
-
-        foreach (Wall wall in WallManager.Instance._allWalls)
-        {
-            ProceduarlwallGenerator.GenerateWallSegment(wall.GetStartPosition(), wall.GetEndPosition(), wall.gameObject.transform);
-        }
-    }*/
-
     private void HideGameobjectsFromOrthoState()
     {
-        // Disable All the Line Renderers from Wall
-        foreach (Wall wall in WallManager.Instance._allWalls)
+        if (WallManager.Instance != null)
         {
-            wall._lineRenderer.enabled = false;
-            wall._boxCollider.enabled = false;
+            foreach (Wall wall in WallManager.Instance._allWalls)
+            {
+                if (wall == null) continue;
+                if (wall._lineRenderer != null) wall._lineRenderer.enabled = false;
+                if (wall._boxCollider != null) wall._boxCollider.enabled = false;
+            }
         }
 
-        // Disable Openings 2d meshes
-        foreach (Opening opening in OpeningManager.Instance.GetAllOpenings())
+        var allOpenings = OpeningManager.Instance?.GetAllOpenings();
+        if (allOpenings != null)
         {
-            opening.OpeningVisual.SetActive(false);
+            foreach (Opening opening in allOpenings)
+            {
+                if (opening == null) continue;
+                if (opening.OpeningVisual != null) opening.OpeningVisual.SetActive(false);
+            }
         }
     }
 
-
-    public void GenerateWalls()
+    private void GenerateWalls()
     {
+        if (WallManager.Instance == null)
+        {
+            Debug.LogWarning("WallManager.Instance not found. Skipping wall generation.");
+            return;
+        }
 
         foreach (Wall wall in WallManager.Instance._allWalls)
         {
-            List<GameObject> allSegments = new List<GameObject>();
+            if (wall == null) continue;
 
-            if (wall._allOpenings == null || wall._allOpenings.Count == 0)
-            {
-                // no openings → full wall
-                allSegments.AddRange(
-                    ProceduarlwallGenerator.GenerateWallSegment(
-                        wall.GetStartPosition(),
-                        wall.GetEndPosition(),
-                        wall.transform));
-            }
-            else
-            {
-                // --- Work in local space ---
-                Vector3 startWS = wall.GetStartPosition();
-                Vector3 endWS = wall.GetEndPosition();
-
-                Vector3 startLS = wall.transform.InverseTransformPoint(startWS);
-                Vector3 endLS = wall.transform.InverseTransformPoint(endWS);
-                Vector3 dirLS = (endLS - startLS).normalized;
-
-                var spans = wall._allOpenings
-                    .Select(o =>
-                    {
-                        Vector3 openingLS = wall.transform.InverseTransformPoint(o.OpeningPosition);
-
-                        float along = Vector3.Dot(openingLS - startLS, dirLS);
-                        float half = o.Width * 0.5f;
-
-                        return new
-                        {
-                            left = along - half,
-                            right = along + half,
-                            centerY = openingLS.y,
-                            height = o.Height,
-                            type = o.OpeningType
-                        };
-                    })
-                    .OrderBy(s => s.left)
-                    .ToList();
-
-                Vector3 cursorLS = startLS;
-
-                foreach (var s in spans)
-                {
-                    Vector3 openingStartLS = startLS + dirLS * s.left;
-                    Vector3 openingEndLS = startLS + dirLS * s.right;
-
-                    // --- Wall before the opening
-                    if (Vector3.Distance(cursorLS, openingStartLS) > 0.01f)
-                    {
-                        allSegments.AddRange(
-                            ProceduarlwallGenerator.GenerateWallSegment(
-                                wall.transform.TransformPoint(cursorLS),
-                                wall.transform.TransformPoint(openingStartLS),
-                                wall.transform));
-                    }
-
-                    // --- Differentiate Opening Types ---
-                    if (s.type == OpeningType.Door)
-                    {
-                        // Doors → gap starts at floor
-                        allSegments.AddRange(
-                            ProceduarlwallGenerator.GenerateWallSegment(
-                                wall.transform.TransformPoint(openingStartLS),
-                                wall.transform.TransformPoint(openingEndLS),
-                                wall.transform,
-                                AppHelper._wallHeight - s.height, // strip above door
-                                s.height));                       // door height
-                    }
-                    else if (s.type == OpeningType.Window)
-                    {
-                        float center = s.centerY;                // interpret Y as window center
-                        float bottom = center - (s.height * 0.5f);
-                        float top = center + (s.height * 0.5f);
-
-                        // bottom strip (floor → window bottom)
-                        if (bottom > 0.01f)
-                        {
-                            allSegments.AddRange(
-                                ProceduarlwallGenerator.GenerateWallSegment(
-                                    wall.transform.TransformPoint(openingStartLS),
-                                    wall.transform.TransformPoint(openingEndLS),
-                                    wall.transform,
-                                    bottom,   // strip height
-                                    0f));     // from floor
-                        }
-
-                        // top strip (window top → ceiling)
-                        if (AppHelper._wallHeight - top > 0.01f)
-                        {
-                            allSegments.AddRange(
-                                ProceduarlwallGenerator.GenerateWallSegment(
-                                    wall.transform.TransformPoint(openingStartLS),
-                                    wall.transform.TransformPoint(openingEndLS),
-                                    wall.transform,
-                                    AppHelper._wallHeight - top,
-                                    top));
-                        }
-                    }
-
-                    // move cursor past this opening
-                    cursorLS = openingEndLS;
-                }
-
-                // --- After last opening
-                if (Vector3.Distance(cursorLS, endLS) > 0.01f)
-                {
-                    allSegments.AddRange(
-                        ProceduarlwallGenerator.GenerateWallSegment(
-                            wall.transform.TransformPoint(cursorLS),
-                            wall.transform.TransformPoint(endLS),
-                            wall.transform));
-                }
-            }
-
-            // Combine All Created Walls 
-            ProceduarlwallGenerator.CombineChildMeshes(wall.transform, allSegments);
+            // Use the centralized generator that understands openings
+            WallMeshGenerator.GenerateWallWithOpenings(wall);
         }
     }
 
-    public static void GenerateOpeningColliders()
+    private void GenerateOpeningColliders()
     {
-        // Check if the WallManager instance exists to prevent errors.
         if (WallManager.Instance == null)
         {
             Debug.LogError("WallManager.Instance not found. Cannot generate opening colliders.");
             return;
         }
 
-        // --- Step 1: Iterate Through Every Wall ---
         foreach (Wall wall in WallManager.Instance._allWalls)
         {
-            // If a wall has no openings, skip it.
-            if (wall._allOpenings == null || wall._allOpenings.Count == 0)
-            {
-                continue;
-            }
+            if (wall == null) continue;
+            if (wall._allOpenings == null || wall._allOpenings.Count == 0) continue;
 
-            // --- Step 2: Iterate Through Each Opening in the Wall ---
             foreach (var opening in wall._allOpenings)
             {
+                if (opening == null) continue;
+
+                /*BoxCollider boxCollider = opening.GetComponent<BoxCollider>();
+                if (boxCollider == null)
+                    boxCollider = opening.gameObject.AddComponent<BoxCollider>();
+                else
+                    boxCollider.enabled = true;
+
+                boxCollider.isTrigger = true;
+
+                // Position the opening gameobject relative to wall (local space)
+                Vector3 openingCenterLS = wall.transform.InverseTransformPoint(opening.OpeningPosition);
+                if (typeof(Opening) == typeof(Door))
+                    openingCenterLS.y -= opening.OpeningPosition.y;
+                else if (typeof(Opening) == typeof(Window))
+                    openingCenterLS.y = 0;
+                    opening.transform.localPosition = openingCenterLS;
+
+                boxCollider.center = new Vector3(0f, opening.Height / 2f, 0f);
+                Vector3 colliderSize = new Vector3(Mathf.Max(0.01f, opening.Width - 0.5f), opening.Height, AppHelper._wallThickness);
+                boxCollider.size = colliderSize;*/
 
                 BoxCollider boxCollider = opening.GetComponent<BoxCollider>();
                 if (boxCollider == null)
@@ -230,17 +144,20 @@ public class PerspectiveState : CameraState
                 Vector3 colliderSize = new Vector3(opening.Width - 0.5f, opening.Height, AppHelper._wallThickness);
 
                 boxCollider.size = colliderSize;
+
             }
         }
     }
 
-
     private void ThreeD_Settings()
     {
-        foreach (Opening opening in OpeningManager.Instance.GetAllOpenings())
+        var openings = OpeningManager.Instance?.GetAllOpenings();
+        if (openings == null) return;
+
+        foreach (var opening in openings)
         {
-            opening.OpeningVisual.SetActive(false);
+            if (opening == null) continue;
+            if (opening.OpeningVisual != null) opening.OpeningVisual.SetActive(false);
         }
     }
-
 }

@@ -3,7 +3,7 @@ public static class Constants
     #region Paths
 
     public static string PATH_DOOR_VISUALIZER = "Prefabs/Door/DoorVisualizer";
-    public static string PATH_WINDOW_VISUALIZER = "Prefabs/Door/DoorVisualizer";
+    public static string PATH_WINDOW_VISUALIZER = "Prefabs/Door/WindowVisualizer";
 
     #endregion
 

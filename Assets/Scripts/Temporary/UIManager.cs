@@ -17,7 +17,7 @@ public class UIManager : MonoBehaviour
         _clearButton.onClick.AddListener(() => ResetSceneAndCreateNewRoom());
         _drawButton.onClick.AddListener(() => GameManager.Instance.SetSubState(new DrawState(GameManager.Instance.GetOrthoCamera())));
         _addDoorButton.onClick.AddListener(() => GameManager.Instance.SetSubState(new AddOpeningState<Door>(GameManager.Instance.GetOrthoCamera(), Constants.PATH_DOOR_VISUALIZER)));
-        _addWindowButton.onClick.AddListener(() => GameManager.Instance.SetSubState(new AddOpeningState<Window>(GameManager.Instance.GetOrthoCamera(), Constants.PATH_DOOR_VISUALIZER)));
+        _addWindowButton.onClick.AddListener(() => GameManager.Instance.SetSubState(new AddOpeningState<Window>(GameManager.Instance.GetOrthoCamera(), Constants.PATH_WINDOW_VISUALIZER)));
     }
 
     private void OnDisable()
@@ -58,9 +58,21 @@ public class UIManager : MonoBehaviour
         GameManager.Instance.GetSubStateManager().SetOrthoIdleState();
     }
 
-    public void SetDrawButtonActive(bool val)
+    public void SetButtonActive(Button btn, bool val)
     {
-        _drawButton.gameObject.SetActive(val);
+        btn.gameObject.SetActive(val);
+    }
+
+    public void OnEnterOrhtoIdleState()
+    {
+        _drawButton.gameObject.SetActive(true);
+        _addDoorButton.gameObject.SetActive(true);
+    }
+
+    public void OnExitOrthoIdleState()
+    {
+        _drawButton.gameObject.SetActive(false);
+        _addDoorButton.gameObject.SetActive(false);
     }
 
     private void ToggleCamerStates()

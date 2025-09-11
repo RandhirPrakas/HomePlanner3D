@@ -7,24 +7,20 @@ public class Window : Opening
 {
     public override void Initialize(Wall wall, Vector3 worldPosition)
     {
-        Height = 3f;    // Default window Height
-        Width = 3f;     // Default Window Width
+        Height = 2f;
+        Width = 2f;
         _parentWall = wall;
         OpeningType = OpeningType.Window;
 
         OpeningPosition = wall.transform.InverseTransformPoint(worldPosition);
+        OpeningPosition = new Vector3(OpeningPosition.x, 2f, OpeningPosition.z);
 
-        // Attach to wall
         transform.SetParent(wall.transform, worldPositionStays: true);
 
-        // Register with wall
         if (!wall._allOpenings.Contains(this))
             wall._allOpenings.Add(this);
 
-        // Add the wall it is connected walls
         ConnectedWall.Add(wall);
-
-        // Add it to OpeningManager
         OpeningManager.Instance.AddOpening(this);
     }
 }

@@ -32,7 +32,7 @@ public class DrawState : ICameraSubState
         _firstNearestWall = null;
         _secondNearestWall = null;
 
-        GameManager.Instance._uiManager.SetDrawButtonActive(false);
+        GameManager.Instance._uiManager.OnExitOrthoIdleState();
         _strandedWalls = GameObject.Find("StrandedWalls").transform;
 
         _lrMaterial = Resources.Load<Material>("ProceduralMaterials/DefaultLRmaterial");

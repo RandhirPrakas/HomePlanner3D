@@ -28,8 +28,8 @@ public static class AppHelper
 
     #region Variables_PointsManagements
 
-    public static readonly float _pointSnapThreshold = 4f;
-    public static readonly float _nearestWallSnapThreshold = 4f;
+    public static readonly float _pointSnapThreshold = 2f;
+    public static readonly float _nearestWallSnapThreshold = 2f;
 
     #endregion
 
@@ -161,40 +161,10 @@ public static class AppHelper
         return centroid;
     }
 
-    /*public static Vector3 CalculateCentroid(List<Vector3> vertices)
-    {
-        Vector3 centroid = new Vector3(0, 0, 0);
-        float signedArea = 0.0f;
-        float x0 = 0.0f;
-        float z0 = 0.0f;
-        float x1 = 0.0f;
-        float z1 = 0.0f;
-        float a = 0.0f;
-
-        // For all vertices
-        for (int i = 0; i < vertices.Count; ++i)
-        {
-            x0 = vertices[i].x;
-            z0 = vertices[i].z;
-            x1 = vertices[(i + 1) % vertices.Count].x;
-            z1 = vertices[(i + 1) % vertices.Count].z;
-            a = x0 * z1 - x1 * z0;
-            signedArea += a;
-            centroid.x += (x0 + x1) * a;
-            centroid.z += (z0 + z1) * a;
-        }
-
-        signedArea *= 0.5f;
-        centroid.x /= (6.0f * signedArea);
-        centroid.z /= (6.0f * signedArea);
-
-        return centroid;
-    }*/
+    
 
     public static bool IsClockwise(Vector3 pointA, Vector3 pointB)
     {
-        // The 2D cross product (x1*z2 - z1*x2) determines the orientation.
-        // A negative result means the first vector (pointA) is clockwise from the second.
         return (pointA.x * pointB.z - pointA.z * pointB.x) < 0;
     }
 
@@ -329,7 +299,7 @@ public static class AppHelper
         if (typeof(T) == typeof(Door)) return _doorWidth;
         if (typeof(T) == typeof(Window)) return _windowWidth;
 
-        return 2f; // fallback for custom opening types
+        return 2f;
     }
 
     public static float GetXZDistance(Vector3 a, Vector3 b)

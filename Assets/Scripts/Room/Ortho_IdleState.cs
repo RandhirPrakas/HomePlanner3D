@@ -12,13 +12,13 @@ public class Ortho_IdleState : ICameraSubState
     public void Enter()
     {
         Debug.Log("Entered IdleState");
-        GameManager.Instance._uiManager.SetDrawButtonActive(true);
+        GameManager.Instance._uiManager.OnEnterOrhtoIdleState();
         _orthoCam = GameManager.Instance.GetOrthoCamera();
     }
 
     public void Exit()
     {
-        
+        GameManager.Instance._uiManager.OnExitOrthoIdleState();
     }
 
     public void Init(Vector3 worldPos, Vector2 screenPos)
