@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 public static class AppHelper
 {
@@ -12,6 +13,13 @@ public static class AppHelper
     public static readonly float _minimumWallHeight = 5f;
     public static readonly float _wallThickness = 1f;
     public static readonly float _wallHeight = 7f;
+
+    #endregion
+
+    #region DoorDefaults
+
+    public static float _doorWidth = 2.5f;
+    public static float _doorHeight = 4f;
 
     #endregion
 
@@ -106,6 +114,87 @@ public static class AppHelper
         return Mathf.Abs(area) * 0.5f;
     }
 
+    public static Vector3 CalculateCentroid(List<Vector3> vertices)
+    {
+        if (vertices == null || vertices.Count < 3)
+        {
+            return Vector3.zero;
+        }
+
+        Vector3 centroid = Vector3.zero;
+        float signedArea = 0.0f;
+
+        for (int i = 0; i < vertices.Count; i++)
+        {
+            Vector3 p0 = vertices[i];
+            Vector3 p1 = vertices[(i + 1) % vertices.Count]; // Wrap around to the first vertex
+
+            // Using the XZ plane for 2D calculations
+            float areaSegment = (p0.x * p1.z) - (p1.x * p0.z);
+            signedArea += areaSegment;
+
+            centroid.x += (p0.x + p1.x) * areaSegment;
+            centroid.z += (p0.z + p1.z) * areaSegment;
+        }
+
+        if (Mathf.Approximately(signedArea, 0))
+        {
+            // Fallback for collinear points: return the average position
+            Vector3 average = Vector3.zero;
+            foreach (var v in vertices) { average += v; }
+            return average / vertices.Count;
+        }
+
+        signedArea *= 0.5f;
+        centroid.x /= (6.0f * signedArea);
+        centroid.z /= (6.0f * signedArea);
+
+        // Preserve the average Y position if it's relevant
+        float avgY = 0;
+        foreach (var v in vertices) { avgY += v.y; }
+        centroid.y = avgY / vertices.Count;
+
+
+        return centroid;
+    }
+
+    /*public static Vector3 CalculateCentroid(List<Vector3> vertices)
+    {
+        Vector3 centroid = new Vector3(0, 0, 0);
+        float signedArea = 0.0f;
+        float x0 = 0.0f;
+        float z0 = 0.0f;
+        float x1 = 0.0f;
+        float z1 = 0.0f;
+        float a = 0.0f;
+
+        // For all vertices
+        for (int i = 0; i < vertices.Count; ++i)
+        {
+            x0 = vertices[i].x;
+            z0 = vertices[i].z;
+            x1 = vertices[(i + 1) % vertices.Count].x;
+            z1 = vertices[(i + 1) % vertices.Count].z;
+            a = x0 * z1 - x1 * z0;
+            signedArea += a;
+            centroid.x += (x0 + x1) * a;
+            centroid.z += (z0 + z1) * a;
+        }
+
+        signedArea *= 0.5f;
+        centroid.x /= (6.0f * signedArea);
+        centroid.z /= (6.0f * signedArea);
+
+        return centroid;
+    }*/
+
+    public static bool IsClockwise(Vector3 pointA, Vector3 pointB)
+    {
+        // The 2D cross product (x1*z2 - z1*x2) determines the orientation.
+        // A negative result means the first vector (pointA) is clockwise from the second.
+        return (pointA.x * pointB.z - pointA.z * pointB.x) < 0;
+    }
+
     public static bool TryGetLineIntersection(Vector3 A, Vector3 B, Vector3 C, Vector3 D, out Vector3 intersection)
     {
         // Project to XZ plane (assuming y is height)
@@ -165,6 +254,14 @@ public static class AppHelper
             return false;
 
         return true;
+    }
+
+    public static float GetXZDistanceBetweenTwoVector(Vector3 a, Vector3 b)
+    {
+        Vector2 aa = new Vector2(a.x, a.z);
+        Vector2 bb = new Vector2(b.x, b.z);
+
+        return Vector2.Distance(aa, bb);
     }
 
     public static bool TrySnapToLine(Vector3 point, Vector3 lineStart, Vector3 lineEnd, out Vector3 snappedPoint)

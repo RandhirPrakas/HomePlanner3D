@@ -123,7 +123,7 @@ public class SubStateManager
 #endif
             Debug.Log(gameObject.name);
 
-            if(gameObject.CompareTag("Door")|| gameObject.CompareTag("Window"))
+            if (gameObject.CompareTag("Door") || gameObject.CompareTag("Window"))
             {
                 SetSubState(new EditOpeningIn3DState(Camera.main));
             }*/

@@ -11,11 +11,6 @@ public class UIManager : MonoBehaviour
     [SerializeField] private Button _addDoorButton;
     [SerializeField] private Button _addWindowButton;
 
-    private void Awake()
-    {
-
-    }
-
     private void OnEnable()
     {
         _toggleButton.onClick.AddListener(() => ToggleCamerStates());
@@ -30,6 +25,8 @@ public class UIManager : MonoBehaviour
         _drawButton.onClick.RemoveAllListeners();
         _clearButton.onClick.RemoveAllListeners();
         _addDoorButton.onClick.RemoveAllListeners();
+        _toggleButton.onClick.RemoveAllListeners();
+        _addWindowButton.onClick.RemoveAllListeners();
     }
 
     private void ResetSceneAndCreateNewRoom()
@@ -54,7 +51,8 @@ public class UIManager : MonoBehaviour
 
         foreach (Room room in RoomManager.Instance._allRooms)
         {
-            Destroy(room.gameObject);
+            room.RemoveRoom();
+            //Destroy(room.gameObject);
         }
         RoomManager.Instance._allRooms.Clear();
         GameManager.Instance.GetSubStateManager().SetOrthoIdleState();

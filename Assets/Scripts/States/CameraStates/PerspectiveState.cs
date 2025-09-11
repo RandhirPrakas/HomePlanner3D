@@ -12,8 +12,8 @@ public class PerspectiveState : CameraState
         Camera.main.orthographic = false;
         HideGameobjectsFromOrthoState();
         GenerateWalls();
-        //ThreeD_Settings();
-        //GenerateOpeningColliders();
+        ThreeD_Settings();
+        GenerateOpeningColliders();
         SetCameraOrientation();
         GameManager.Instance.GetSubStateManager().SetPerspIdleState();
     }
@@ -30,14 +30,14 @@ public class PerspectiveState : CameraState
         Camera.main.fieldOfView = 45;
     }
 
-    public void GenerateWalls()
+    /*public void GenerateWalls()
     {
 
         foreach (Wall wall in WallManager.Instance._allWalls)
         {
             ProceduarlwallGenerator.GenerateWallSegment(wall.GetStartPosition(), wall.GetEndPosition(), wall.gameObject.transform);
         }
-    }
+    }*/
 
     private void HideGameobjectsFromOrthoState()
     {
@@ -51,12 +51,12 @@ public class PerspectiveState : CameraState
         // Disable Openings 2d meshes
         foreach (Opening opening in OpeningManager.Instance.GetAllOpenings())
         {
-            opening.GetComponent<MeshRenderer>().enabled = false;
+            opening.OpeningVisual.SetActive(false);
         }
     }
 
 
-    /*public void GenerateWalls()
+    public void GenerateWalls()
     {
 
         foreach (Wall wall in WallManager.Instance._allWalls)
@@ -180,7 +180,7 @@ public class PerspectiveState : CameraState
             // Combine All Created Walls 
             ProceduarlwallGenerator.CombineChildMeshes(wall.transform, allSegments);
         }
-    }*/
+    }
 
     public static void GenerateOpeningColliders()
     {
@@ -239,7 +239,7 @@ public class PerspectiveState : CameraState
     {
         foreach (Opening opening in OpeningManager.Instance.GetAllOpenings())
         {
-            opening.GetComponent<SphereCollider>().enabled = false;
+            opening.OpeningVisual.SetActive(false);
         }
     }
 

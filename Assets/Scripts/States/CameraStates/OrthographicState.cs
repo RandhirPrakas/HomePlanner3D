@@ -57,7 +57,7 @@ public class OrthographicState : CameraState
         {
             foreach (Opening opening in OpeningManager.Instance.GetAllOpenings())
             {
-                opening.GetComponent<MeshRenderer>().enabled = true;
+                opening.OpeningVisual.SetActive(true);
             }
         }
     }
@@ -67,7 +67,6 @@ public class OrthographicState : CameraState
     {
         foreach(Opening opening in OpeningManager.Instance.GetAllOpenings())
         {
-            opening.GetComponent<SphereCollider>().enabled = true;
             if(opening.GetComponent<BoxCollider>()!= null)
                 opening.GetComponent<BoxCollider>().enabled = false;
         }

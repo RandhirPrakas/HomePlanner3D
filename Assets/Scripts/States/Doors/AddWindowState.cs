@@ -63,7 +63,10 @@ public class AddWindowState : ICameraSubState
         }
     }
 
-    public void Update() { }
+    public void Update()
+    {
+        _orthoCam.Update();
+    }
 
     public void Init(Vector3 worldPos, Vector2 screenPos)
     {

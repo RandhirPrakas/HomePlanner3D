@@ -10,9 +10,11 @@ public class Door : Opening
         Width = 2.5f;
         _parentWall = wall;
         OpeningType = OpeningType.Door;
+
         // Convert world position into local space of the wall
         OpeningPosition = wall.transform.InverseTransformPoint(worldPosition);
         OpeningPosition = new Vector3(OpeningPosition.x, 3f, OpeningPosition.z);
+        
         // Attach opening to wall
         transform.SetParent(wall.transform, worldPositionStays: true);
 

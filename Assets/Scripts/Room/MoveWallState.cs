@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Diagnostics.CodeAnalysis;
+using UnityEngine;
 
 public class MoveWallState : ICameraSubState
 {
@@ -13,12 +14,12 @@ public class MoveWallState : ICameraSubState
 
     public MoveWallState(Wall wall, OrthoCam orthoCam)
     {
-        SetActiveWall(wall);
+        SetActiveWall(wall, false);
 
         _orthoCam = (orthoCam == null) ? GameManager.Instance.GetOrthoCamera() : orthoCam;
     }
 
-    public void SetActiveWall(Wall wall)
+    public void SetActiveWall(Wall wall, bool canChangeColor = true)
     {
         _activeWall = wall;
         GameManager.Instance._activeWall = _activeWall;
@@ -27,6 +28,7 @@ public class MoveWallState : ICameraSubState
         _direction = new Vector3(-wallVector.z, 0.1f, wallVector.x).normalized;
         Debug.Log($"Active wall set to {_activeWall.name}");
         _defaultColor = _activeWall.GetComponent<LineRenderer>().material.color;
+        if(canChangeColor)
         _activeWall.GetComponent<LineRenderer>().material.color = Color.blue;
     }
 
@@ -56,11 +58,11 @@ public class MoveWallState : ICameraSubState
     public void OnTouchStart(Vector3 worldPos, Vector2 screenPos)
     {
         // Start drag only if touching current wall
-        if (_activeWall == null)
+        if (_activeWall == null )
         {
-            GetActiveWall(screenPos);
+            SetActiveWall(GetActiveWall(screenPos));
         }
-        _lastWallPosition = worldPos;
+            _lastWallPosition = worldPos;
         _isDragging = true;
     }
 
@@ -117,7 +119,7 @@ public class MoveWallState : ICameraSubState
         throw new System.NotImplementedException();
     }
 
-    private void GetActiveWall(Vector2 screenPos)
+    private Wall GetActiveWall(Vector2 screenPos)
     {
         Ray ray = Camera.main.ScreenPointToRay(screenPos);
         if (Physics.Raycast(ray, out RaycastHit hit))
@@ -127,10 +129,11 @@ public class MoveWallState : ICameraSubState
                 Wall wall = hit.collider.GetComponentInParent<Wall>();
                 if (wall != null && wall != _activeWall)
                 {
-                    SetActiveWall(wall);
+                    return wall;
                 }
             }
         }
+        return null;
     }
 
     public void OnPinch(float delta)

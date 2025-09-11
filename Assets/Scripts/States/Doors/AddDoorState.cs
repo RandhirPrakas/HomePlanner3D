@@ -5,21 +5,20 @@ public class AddDoorState : ICameraSubState
 {
     private Wall _targetWall;
     private GameObject _dotPreview;
-    private float _tOnWall;
     private GameObject _dotPrefab;
 
     private OrthoCam _orthoCam;
 
     public AddDoorState(OrthoCam orthoCam)
     {
-        _dotPrefab = Resources.Load<GameObject>("Prefabs/DoorDotPrefab");
+        _dotPrefab = Resources.Load<GameObject>("Prefabs/Door/DoorVisualizer");
         _orthoCam = orthoCam;
     }
 
     public void Enter()
     {
         Debug.Log("Entered AddDoorState");
-       
+
         if (_targetWall == null)
         {
             _targetWall = FindFirstWall();
@@ -34,25 +33,22 @@ public class AddDoorState : ICameraSubState
 
         if (_dotPrefab != null)
         {
+            // create preview but don't attach Door script yet
             _dotPreview = GameObject.Instantiate(_dotPrefab);
+            _dotPreview.name = "Door Preview";
         }
         else
         {
-            _dotPreview = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            _dotPreview.name = "Door Preview";
-            _dotPreview.transform.localScale = Vector3.one;
-            _dotPreview.tag = "Door";
+            Debug.LogError("Dot prefab not found at Resources/Prefabs/Door/DoorVisualizer");
         }
 
-        // --- Move preview to midpoint of target wall ---
+        // --- Position preview at midpoint of target wall initially ---
         Vector3 start = _targetWall.GetStartPosition();
         Vector3 end = _targetWall.GetEndPosition();
         Vector3 midPoint = Vector3.Lerp(start, end, 0.5f);
         _dotPreview.transform.position = new Vector3(midPoint.x, 0.5f, midPoint.z);
-
-        PlaceDoor(_targetWall, midPoint);
+        _dotPreview.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
     }
-
 
     public void Exit()
     {
@@ -61,10 +57,11 @@ public class AddDoorState : ICameraSubState
         if (_dotPreview != null)
         {
             GameObject.Destroy(_dotPreview);
+            _dotPreview = null;
         }
     }
 
-    public void Update() 
+    public void Update()
     {
         _orthoCam.Update();
     }
@@ -97,36 +94,57 @@ public class AddDoorState : ICameraSubState
         if (nearestWall != null)
         {
             _targetWall = nearestWall;
-
-            _dotPreview.transform.position = new Vector3(closestPoint.x, 3f, closestPoint.z);
+            _dotPreview.transform.position = new Vector3(closestPoint.x, 0.5f, closestPoint.z);
+            _dotPreview.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+            SetDoorVisualRotation(_dotPreview, nearestWall);
         }
     }
 
     public void OnTouchEnd(Vector3 worldPos, Vector2 screenPos)
     {
         Wall nearestWall = FindNearestWall(worldPos, out Vector3 closestPoint);
-
         closestPoint.y = 3f;
-        if (nearestWall != null)
+
+        if(!CanPlaceDoor(nearestWall, closestPoint))
         {
-            // Create a simple dot prefab at the position
-            GameObject doorDot = GameObject.Instantiate(
-                _dotPreview,
+            Debug.Log("Cannot Place Door as it is too close to other opening or wall end");
+            return;
+        }
+
+        if (nearestWall != null && _dotPrefab != null)
+        {
+            // create the actual placed door
+            GameObject doorSprites = GameObject.Instantiate(
+                _dotPrefab,
                 closestPoint,
-                Quaternion.identity,
+                Quaternion.Euler(90f, 0f, 0f),
                 nearestWall.transform
             );
-            doorDot.GetComponent<MeshRenderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            Door door = doorDot.AddComponent<Door>();
-            door.Initialize(nearestWall, closestPoint);
+            GameObject doorVisual = new GameObject("Door");
+            doorVisual.transform.position = closestPoint;
+            doorVisual.transform.SetParent(nearestWall.transform);
+            doorVisual.tag = "Door";
 
+            doorSprites.transform.SetParent(doorVisual.transform);
+
+            Door door = doorVisual.AddComponent<Door>();
+            door.Initialize(nearestWall, closestPoint);
+            door.OpeningVisual = doorSprites;
+
+            SetDoorVisualRotation(door.OpeningVisual, nearestWall);
             Debug.Log($"Door opening placed on {nearestWall.name} at {closestPoint}");
         }
 
-        // Switch back to the safe IdleState
+        // destroy preview
+        if (_dotPreview != null)
+        {
+            GameObject.Destroy(_dotPreview);
+            _dotPreview = null;
+        }
+
+        // Switch back to IdleState
         GameManager.Instance.GetSubStateManager().SetSubState(new Ortho_IdleState(GameManager.Instance.GetOrthoCamera()));
     }
-
 
     private Wall FindNearestWall(Vector3 point, out Vector3 closestPoint, float snapThreshold = 5f)
     {
@@ -134,34 +152,31 @@ public class AddDoorState : ICameraSubState
         float minDist = float.MaxValue;
         closestPoint = point;
 
-        
-            foreach (Wall wall in WallManager.Instance._allWalls)
+        foreach (Wall wall in WallManager.Instance._allWalls)
+        {
+            if (wall == null) continue;
+
+            Vector3 a = wall.GetStartPosition();
+            Vector3 b = wall.GetEndPosition();
+
+            Vector3 proj;
+            GetClosesDistance(a, b, point, out proj);
+
+            float dist = Vector3.Distance(proj, point);
+
+            if (dist < minDist)
             {
-                if (wall == null) continue;
-
-                Vector3 a = wall.GetStartPosition();
-                Vector3 b = wall.GetEndPosition();
-
-                Vector3 proj;
-                GetClosesDistance(a, b, point, out proj);
-
-                float dist = Vector3.Distance(proj, point);
-
-                if (dist < minDist)
-                {
-                    minDist = dist;
-                    nearest = wall;
-                    closestPoint = proj;
-                }
+                minDist = dist;
+                nearest = wall;
+                closestPoint = proj;
             }
-        
+        }
 
         if (minDist > snapThreshold) nearest = null;
 
         return nearest;
     }
 
-    // Get Distance from touch point to the nearest wall
     private float GetClosesDistance(Vector3 a, Vector3 b, Vector3 point, out Vector3 closest)
     {
         Vector3 ab = b - a;
@@ -175,41 +190,53 @@ public class AddDoorState : ICameraSubState
 
     private Wall FindFirstWall()
     {
-        foreach(Wall wall in WallManager.Instance._allWalls)
+        foreach (Wall wall in WallManager.Instance._allWalls)
         {
             if (wall != null)
                 return wall;
         }
-
         return null;
-    }
-
-    private void PlaceDoor(Wall wall, Vector3 position)
-    {
-        if (_dotPrefab == null)
-        {
-            Debug.LogWarning("Dot prefab not set, skipping door placement.");
-            return;
-        }
-
-        GameObject doorDot = GameObject.Instantiate(
-            _dotPrefab,
-            position,
-            Quaternion.identity,
-            wall.transform
-        );
-
-        doorDot.GetComponent<MeshRenderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-
-        Door door = doorDot.AddComponent<Door>();
-        door.Initialize(wall, position);
-
-        door.transform.position = new Vector3(position.x, 0.5f, position.z);
-        Debug.Log($"Door opening automatically placed on {wall.name} at {position}");
     }
 
     public void OnPinch(float delta)
     {
         _orthoCam.ZoomCamera(delta);
+    }
+
+    private void SetDoorVisualRotation(GameObject doorPriview, Wall wall)
+    {
+        Vector3 a = wall.GetStartPosition();
+        Vector3 b = wall.GetEndPosition();
+
+        // Wall direction (along the wall)
+        Vector3 wallDir = (b - a).normalized;
+
+        // direction perpednicular to this wal l
+        Vector3 perp = Vector3.Cross(wallDir, Vector3.up).normalized;
+
+        Quaternion targetRot = Quaternion.LookRotation(perp, Vector3.up);
+
+        Quaternion fixRot = Quaternion.Euler(90f, 0f, 0f);
+        doorPriview.transform.rotation = targetRot * fixRot;
+    }
+
+    private bool CanPlaceDoor(Wall wall, Vector3 currentPosition)
+    {
+
+        if (AppHelper.GetXZDistanceBetweenTwoVector(currentPosition, wall.GetStartPosition()) < AppHelper._doorWidth + 0.25f ||
+                AppHelper.GetXZDistanceBetweenTwoVector(currentPosition, wall.GetEndPosition()) < AppHelper._doorWidth + 0.25f)
+            return false;
+
+        if (wall._allOpenings.Count == 0)
+        {
+            return true;
+        }
+
+        foreach(Opening opening in wall._allOpenings)
+        {
+            if ((AppHelper.GetXZDistanceBetweenTwoVector(currentPosition, opening.OpeningPosition) < (opening.Width) / 2 + (AppHelper._doorWidth / 2) + 0.25f))
+                return false;
+        }
+        return true;
     }
 }

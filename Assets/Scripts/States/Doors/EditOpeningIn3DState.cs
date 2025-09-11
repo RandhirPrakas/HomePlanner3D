@@ -156,7 +156,6 @@ public class EditOpeningIn3DState : ICameraSubState
             }
         }
 
-        //if (minDist > _snapThreshold) nearest = null;
         return nearest;
     }
 

@@ -11,7 +11,10 @@ public abstract class Opening : MonoBehaviour
     [SerializeField] private float _height = 2f;
 
     [SerializeField] private GameObject _strandedOpenings;
+    [SerializeField] private GameObject _openingVisualizer;
+
     public Transform StrandedOpening { get => _strandedOpenings.transform; }
+    public GameObject OpeningVisual { get => _openingVisualizer; set => _openingVisualizer = value; }
 
     public Wall _parentWall;
     public Wall _lastWall;

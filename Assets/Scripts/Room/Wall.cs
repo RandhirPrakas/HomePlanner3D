@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class Wall : MonoBehaviour
 {
@@ -11,14 +12,13 @@ public class Wall : MonoBehaviour
 
     [SerializeField] private float _wallLength;
 
-    [SerializeField] private GameObject _canvasGO;
     [SerializeField] private Room _parentRoom;
 
     public LineRenderer _lineRenderer;
 
-    private GameObject _labelGO;
-    private TMP_Text _labelText;
-    private RectTransform _labelRect;
+    // World-space label
+    [SerializeField] private TMP_Text _labelPrefab;
+    private TMP_Text _labelInstance;
 
     // Colliders
     [SerializeField] private GameObject _colliderGO;
@@ -30,65 +30,38 @@ public class Wall : MonoBehaviour
     #endregion
 
     #region Getter And Setters
+    public void SetParentRoom(Room room) => _parentRoom = room;
 
-    public void SetParentRoom(Room room)
-    {
-        _parentRoom = room;
-    }
+    public WallPoint GetStartWallPoint() => _startWallPoint;
+    public void SetStartWallPoint(WallPoint newWallPoint) => _startWallPoint = newWallPoint;
 
-    public WallPoint GetStartWallPoint()
-    {
-        return _startWallPoint;
-    }
+    public WallPoint GetEndWallPoint() => _endWallPoint;
+    public void SetEndWallPoint(WallPoint wallPoint) => _endWallPoint = wallPoint;
 
-    public void SetStartWallPoint(WallPoint newWallPoint)
-    {
-        _startWallPoint = newWallPoint;
-    }
+    public Vector3 GetStartPosition() => new Vector3(_startWallPoint._position.x, 0, _startWallPoint._position.z);
+    public Vector3 GetEndPosition() => new Vector3(_endWallPoint._position.x, 0, _endWallPoint._position.z);
 
-    public WallPoint GetEndWallPoint()
-    {
-        return _endWallPoint;
-    }
-
-    public void SetEndWallPoint(WallPoint wallPoint)
-    {
-        _endWallPoint = wallPoint;
-    }
-
-    public Vector3 GetStartPosition()
-    {
-        Vector3 pos = new Vector3(_startWallPoint._position.x, 0, _startWallPoint._position.z);
-        return pos;
-    }
-
-    public Vector3 GetEndPosition()
-    {
-        Vector3 pos = new Vector3(_endWallPoint._position.x, 0, _endWallPoint._position.z);
-        return pos;
-    }
-
-    public Room GetRoomParent()
-    {
-        return _parentRoom;
-    }
-
+    public Room GetRoomParent() => _parentRoom;
     #endregion
 
+    private void Start()
+    {
+        _labelPrefab = Resources.Load<TMP_Text>("Prefabs/Label/LabelPrefab");
+    }
 
     public void SetStartAndEndPosition(WallPoint startPosition, WallPoint endPosition, Room room = null)
     {
-        this._startWallPoint = startPosition;
-        this._endWallPoint = endPosition;
+        _startWallPoint = startPosition;
+        _endWallPoint = endPosition;
 
-
-        if(room != null)
-            this._parentRoom = room;
+        if (room != null)
+            _parentRoom = room;
 
         startPosition.SetPosition(startPosition._position);
 
         InitLineRenderer();
         EnsureColliderGO();
+        CreateLabel();
         UpdateFromPoints(true);
     }
 
@@ -96,24 +69,19 @@ public class Wall : MonoBehaviour
     {
         _lineRenderer = GetComponent<LineRenderer>();
         if (_lineRenderer == null)
-        {
             _lineRenderer = gameObject.AddComponent<LineRenderer>();
-        }
 
         _lineRenderer.positionCount = 2;
         _lineRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         _lineRenderer.material = Resources.Load<Material>("ProceduralMaterials/DefaultLRmaterial");
         _lineRenderer.startWidth = AppHelper._lrThickness;
         _lineRenderer.endWidth = AppHelper._lrThickness;
-
-        _lineRenderer.SetPosition(0, new Vector3(_startWallPoint._position.x, 0.5f, _startWallPoint._position.z));
-        _lineRenderer.SetPosition(1, new Vector3(_endWallPoint._position.x, 0.5f, _endWallPoint._position.z));
     }
 
     private bool _isUpdating = false;
     public void UpdateFromPoints(bool isUpdatingPoint = false)
     {
-        if (_isUpdating) return;   // prevent recursion
+        if (_isUpdating) return;
         _isUpdating = true;
 
         try
@@ -134,44 +102,92 @@ public class Wall : MonoBehaviour
             UpdateLabel(start, end);
             UpdateCollider(start, end);
             UpdateRoom();
-            if(!isUpdatingPoint)
+
+            if (!isUpdatingPoint)
                 UpdateConenctedWalls();
         }
         finally
         {
-            // always reset even if an exception happens
             _isUpdating = false;
         }
     }
 
-    private void UpdateLabel(Vector3 start, Vector3 end)
+    #region Wall Label
+
+    private void CreateLabel()
     {
-        if (_labelText == null || _labelRect == null)
-            return;
+        if (_labelPrefab == null)
+            _labelPrefab = Resources.Load<TMP_Text>("Prefabs/Wall/WallLengthLabel");
 
-        Vector3 center = (start + end) * 0.5f;
-        Vector3 direction = (end - start).normalized;
+        if (_labelInstance != null)
+            Destroy(_labelInstance.gameObject);
 
-        _labelRect.position = center + Vector3.up * 0.1f;
+        _labelInstance = Instantiate(_labelPrefab, transform);
+        _labelInstance.alignment = TextAlignmentOptions.Center;
+        _labelInstance.fontSize = 10f;
 
-        float angle = Mathf.Atan2(direction.z, direction.x) * Mathf.Rad2Deg;
-        Quaternion rot = Quaternion.Euler(90f, 0f, -angle);
-
-        Vector3 rightSide = new Vector3(direction.z, 0, -direction.x);
-
-        Vector3 labelUp = rot * Vector3.up;
-        if (Vector3.Dot(labelUp, rightSide) < 0)
-        {
-            rot *= Quaternion.Euler(0f, 0f, 180f);
-        }
-
-        _labelRect.rotation = rot;
-
-        _labelRect.sizeDelta = new Vector2(_wallLength, _labelRect.sizeDelta.y);
-
-        _labelText.text = _wallLength.ToString("F2") + " ft";
+        // Initialize position
+        UpdateLabel(GetStartPosition(), GetEndPosition());
     }
 
+    /*private void UpdateLabel(Vector3 start, Vector3 end)
+    {
+        if (_labelInstance == null) return;
+
+        Vector3 center = (start + end) * 0.5f;
+        float dirMul = AppHelper.IsClockwise(start, end)?1:-1;
+
+        // Compute perpendicular direction on XZ plane
+        Vector3 wallDir = (end - start).normalized * dirMul;
+        Vector3 perpendicular = new Vector3(-wallDir.z, 0, wallDir.x);
+
+        float offsetDistance = 1f; // distance from wall
+        Vector3 labelPos = center + perpendicular * offsetDistance + Vector3.up * 0.5f;
+
+        _labelInstance.transform.position = labelPos;
+
+        // Rotate the label so it faces the camera or aligns nicely with wall
+        float angle = Mathf.Atan2(wallDir.z, wallDir.x) * Mathf.Rad2Deg;
+        _labelInstance.transform.rotation = Quaternion.Euler(90f, -angle, 0f);
+
+        // Update text
+        _labelInstance.text = _wallLength.ToString("F2") + " ft";
+        _labelInstance.rectTransform.sizeDelta = new Vector2(_wallLength, 0.5f);
+    }*/
+
+    private void UpdateLabel(Vector3 start, Vector3 end)
+    {
+        if (_labelInstance == null) return;
+
+        Vector3 center = (start + end) * 0.5f;
+        float dirMul = AppHelper.IsClockwise(start, end) ? 1 : -1;
+
+        // Compute perpendicular direction on XZ plane
+        Vector3 wallDir = (end - start).normalized * dirMul;
+        Vector3 perpendicular = new Vector3(-wallDir.z, 0, wallDir.x);
+
+        float offsetDistance = 1f; // distance from wall
+        Vector3 labelPos = center + perpendicular * offsetDistance + Vector3.up * 0.5f;
+
+        _labelInstance.transform.position = labelPos;
+
+        _labelInstance.rectTransform.sizeDelta = new Vector2(_wallLength, 1);
+        float angle = Mathf.Atan2(wallDir.z, wallDir.x) * Mathf.Rad2Deg;
+        _labelInstance.transform.rotation = Quaternion.Euler(90f, -angle, 0f);
+
+        // We don't need to update the text since it seems you're using a separate text object
+         _labelInstance.text = _wallLength.ToString("F2") + " ft";
+    }
+
+    public void DestroyLabel()
+    {
+        if (_labelInstance != null)
+            Destroy(_labelInstance.gameObject);
+
+        _labelInstance = null;
+    }
+
+    #endregion
 
     private void UpdateCollider(Vector3 start, Vector3 end)
     {
@@ -187,29 +203,9 @@ public class Wall : MonoBehaviour
             Quaternion.LookRotation(dir.normalized, Vector3.up)
         );
 
-        float lrWidth = _lineRenderer != null ? _lineRenderer.startWidth : AppHelper._lrThickness;
-        float pickPadding = Mathf.Max(0.02f, lrWidth * 0.25f); 
-        float colliderZ = Mathf.Max(0.01f, length);
-
-        _boxCollider.size = new Vector3(2.5f, 3f, colliderZ);
+        _boxCollider.size = new Vector3(2.5f, 3f, length);
         _boxCollider.center = Vector3.zero;
-
     }
-
-
-    public void DestroyLabel()
-    {
-        if (_labelGO != null)
-        {
-            Destroy(_labelGO);
-            _labelGO = null;
-        }
-
-        _labelText = null;
-        _labelRect = null;
-    }
-
-    // Colliders 
 
     private void EnsureColliderGO()
     {
@@ -217,53 +213,47 @@ public class Wall : MonoBehaviour
 
         _colliderGO = new GameObject("WallCollider");
         _colliderGO.tag = "Wall";
-        _colliderGO.transform.SetParent(transform, false); 
+        _colliderGO.transform.SetParent(transform, false);
         _boxCollider = _colliderGO.AddComponent<BoxCollider>();
-        _boxCollider.size = new Vector3(1, _boxCollider.size.y, _boxCollider.size.z);
+        _boxCollider.size = new Vector3(1, 3f, 1f);
     }
 
     private void UpdateConenctedWalls()
     {
-        foreach(Wall wall in _startWallPoint.GetConnectedWalls())
+        foreach (Wall wall in _startWallPoint.GetConnectedWalls())
         {
-            if (wall == this)
-                continue;
+            if (wall == this) continue;
+            wall.UpdateFromPoints();
+        }
+
+        foreach (Wall wall in _endWallPoint.GetConnectedWalls())
+        {
+            if (wall == this) continue;
             wall.UpdateFromPoints();
         }
     }
 
     private void UpdateRoom()
     {
-        if(_startWallPoint.GetConnectedRooms().Count == 0 || _endWallPoint.GetConnectedRooms().Count == 0)
-        {
+        if (_startWallPoint.GetConnectedRooms().Count == 0 || _endWallPoint.GetConnectedRooms().Count == 0)
             return;
-        }
 
-        foreach(Room room in _startWallPoint.GetConnectedRooms())
-        {
+        foreach (Room room in _startWallPoint.GetConnectedRooms())
             room.UpdateFloor();
-        }
 
         foreach (Room room in _endWallPoint.GetConnectedRooms())
-        {
             room.UpdateFloor();
-        }
     }
 
     public void DeleteWall()
     {
-        // Rescue openings
         foreach (var opening in new List<Opening>(_allOpenings))
-        {
             opening.Detach();
-        }
 
         if (WallManager.Instance._allWalls.Contains(this))
-        {
             WallManager.Instance._allWalls.Remove(this);
-        }
 
-        //WallManager._wallIndex--;
+        DestroyLabel();
         Destroy(gameObject);
     }
 }

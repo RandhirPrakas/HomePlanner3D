@@ -77,7 +77,7 @@ public class MoveRoomState : ICameraSubState
                 if (wall.GetRoomParent() == _activeRoom)
                     wall.UpdateFromPoints(true);
                 else
-                    wall.UpdateFromPoints(); // regen wall for other room
+                    wall.UpdateFromPoints();
             }
         }
 
