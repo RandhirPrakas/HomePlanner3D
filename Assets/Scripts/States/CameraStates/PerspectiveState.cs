@@ -39,6 +39,9 @@ public class PerspectiveState : CameraState
         Camera.main.transform.position = new Vector3(0, 25, -25);
         Camera.main.transform.rotation = Quaternion.Euler(45, 0, 0);
         Camera.main.fieldOfView = 45;
+
+        GameManager.Instance.GetOrthoCamera().enabled = false;
+        GameManager.Instance.GetPerspCam().enabled = true;
     }
 
     private void HideGameobjectsFromOrthoState()
@@ -59,7 +62,7 @@ public class PerspectiveState : CameraState
             foreach (Opening opening in allOpenings)
             {
                 if (opening == null) continue;
-                if (opening.OpeningVisual != null) opening.OpeningVisual.SetActive(false);
+                if (opening.OpeningVisual != null) opening.OpeningVisual.gameObject.SetActive(false);
             }
         }
     }
@@ -97,26 +100,6 @@ public class PerspectiveState : CameraState
             foreach (var opening in wall._allOpenings)
             {
                 if (opening == null) continue;
-
-                /*BoxCollider boxCollider = opening.GetComponent<BoxCollider>();
-                if (boxCollider == null)
-                    boxCollider = opening.gameObject.AddComponent<BoxCollider>();
-                else
-                    boxCollider.enabled = true;
-
-                boxCollider.isTrigger = true;
-
-                // Position the opening gameobject relative to wall (local space)
-                Vector3 openingCenterLS = wall.transform.InverseTransformPoint(opening.OpeningPosition);
-                if (typeof(Opening) == typeof(Door))
-                    openingCenterLS.y -= opening.OpeningPosition.y;
-                else if (typeof(Opening) == typeof(Window))
-                    openingCenterLS.y = 0;
-                    opening.transform.localPosition = openingCenterLS;
-
-                boxCollider.center = new Vector3(0f, opening.Height / 2f, 0f);
-                Vector3 colliderSize = new Vector3(Mathf.Max(0.01f, opening.Width - 0.5f), opening.Height, AppHelper._wallThickness);
-                boxCollider.size = colliderSize;*/
 
                 BoxCollider boxCollider = opening.GetComponent<BoxCollider>();
                 if (boxCollider == null)
@@ -157,7 +140,7 @@ public class PerspectiveState : CameraState
         foreach (var opening in openings)
         {
             if (opening == null) continue;
-            if (opening.OpeningVisual != null) opening.OpeningVisual.SetActive(false);
+            if (opening.OpeningVisual != null) opening.OpeningVisual.gameObject.SetActive(false);
         }
     }
 }

@@ -2,7 +2,7 @@ using UnityEngine;
 
 public static class OpeningCreationFactory
 {
-    public static IOpeningCreationPlan GetStrategy(OpeningType type)
+    public static IOpeningCreationPlan CreateOpening(OpeningType type)
     {
         switch (type)
         {

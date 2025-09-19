@@ -89,6 +89,9 @@ public class GameManager : MonoBehaviour
     {
         _orthoCam = Camera.main.GetComponent<OrthoCam>();
         _orthoCam._mainCamera = Camera.main;
+
+        _perspCam = Camera.main.GetComponent<PerspCam>();
+        _perspCam._mainCamera = Camera.main;
     }
 
     #region camera

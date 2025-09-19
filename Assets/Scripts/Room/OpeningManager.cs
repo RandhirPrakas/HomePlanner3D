@@ -5,7 +5,9 @@ public class OpeningManager : MonoBehaviour
 {
     public static OpeningManager Instance;
 
-    private List<Opening> _allOpenings = new List<Opening>();
+    [SerializeField] private List<Opening> _allOpenings = new List<Opening>();
+
+    public Opening _currentSelectedOpening;
 
     private void Awake()
     {
@@ -64,5 +66,12 @@ public class OpeningManager : MonoBehaviour
     public void Cleanup()
     {
         _allOpenings.RemoveAll(o => o == null);
+    }
+
+    public void DeleteOpening(Opening opening)
+    {
+        opening._parentWall._allOpenings.Remove(opening);
+        _allOpenings.Remove(opening);
+        Destroy(opening.gameObject);
     }
 }

@@ -1,15 +1,35 @@
 ﻿using System.Collections.Generic;
+using UnityEditor;
 using UnityEngine;
 
 public class EditRoomPointsState : ICameraSubState
 {
     private WallPoint _selectedPoint;
+    private WallPoint SelectedPoint
+    {
+        get { return _selectedPoint; }
+        set
+        {
+            if (_selectedPoint == value) return;
+            _selectedPoint = value;
+
+            WallPointManager.Instance._currentActiveWallpoint = value;
+        }
+    }
+
+    private EditUI _editUI;
+
     private GameObject _highlightParent;
     private OrthoCam _orthoCam;
 
-    public EditRoomPointsState(OrthoCam orthoCam)
+    public EditRoomPointsState(OrthoCam orthoCam, WallPoint wallpoint)
     {
         _orthoCam = (orthoCam == null) ? GameManager.Instance.GetOrthoCamera() : orthoCam;
+        if (wallpoint != null)
+        {
+            SelectedPoint = wallpoint;
+            SetEditUI();
+        }
     }
 
     private readonly Color _highlightedColor = new Color(136, 91, 255, 255);
@@ -44,13 +64,16 @@ public class EditRoomPointsState : ICameraSubState
         // Clean up all highlight visuals
         if (_highlightParent != null)
             GameObject.Destroy(_highlightParent);
+
+        SelectedPoint = null;
+        DestroyEditUI();
     }
 
-    public void Update() 
+    public void Update()
     {
-        if(Input.GetKeyDown(KeyCode.D))
+        if (Input.GetKeyDown(KeyCode.D))
         {
-            if(_selectedPoint != null)
+            if (_selectedPoint != null)
             {
                 Debug.Log("<color=green> Deleting Current Active wall Point</color>");
                 WallPointManager.Instance.DeleteWallPoint(_selectedPoint);
@@ -65,9 +88,12 @@ public class EditRoomPointsState : ICameraSubState
 
     public void OnTouchStart(Vector3 worldPos, Vector2 screenPos)
     {
-        _selectedPoint = GetPointUnderTouch(worldPos);
-        if(_selectedPoint != null)
+        SelectedPoint = GetPointUnderTouch(worldPos);
+        if (_selectedPoint != null)
+        {
             _selectedPoint._activeSphere.GetComponent<MeshRenderer>().material.color = _highlightedColor;
+            SetEditUI();
+        }
     }
 
     public void OnTouchHold(Vector3 worldPos, Vector2 screenPos)
@@ -99,6 +125,7 @@ public class EditRoomPointsState : ICameraSubState
     {
         if (_selectedPoint == null) return;
 
+
         Vector3 snappedPos = AppHelper.SmartSnapToAxis(worldPos, WallPointManager.Instance._allWallPoints);
         snappedPos += Vector3.up * AppHelper._lrYPos;
 
@@ -108,7 +135,7 @@ public class EditRoomPointsState : ICameraSubState
             Debug.Log("Action: Merging with existing point.");
             _selectedPoint.MergeWith(targetPointToMerge);
 
-            _selectedPoint = null;
+            SelectedPoint = null;
             return;
         }
 
@@ -122,7 +149,7 @@ public class EditRoomPointsState : ICameraSubState
         foreach (var pair in wallsToRedraw)
         {
             Wall wall = pair.Key;
-            WallManager.Instance.DestroyWall(wall);
+            WallManager.Instance.DeleteWall(wall);
         }
 
         _selectedPoint.SetPosition(snappedPos);
@@ -130,7 +157,7 @@ public class EditRoomPointsState : ICameraSubState
         foreach (var pair in wallsToRedraw)
         {
             WallPoint otherPoint = pair.Value;
-            Debug.Log($"Redrawing wall from {otherPoint._position} to {_selectedPoint._position}");
+            //Debug.Log($"Redrawing wall from {otherPoint._position} to {_selectedPoint._position}");
             AppHelper.ManageWallsAndWallPoints(otherPoint._position, _selectedPoint._position);
         }
 
@@ -149,7 +176,7 @@ public class EditRoomPointsState : ICameraSubState
         float closestSqrDist = float.MaxValue;
 
         Vector3 adjustedPos = position + Vector3.up * AppHelper._lrYPos;
-        float thresholdSqr = AppHelper._pointSnapThreshold * AppHelper._pointSnapThreshold;
+        float thresholdSqr = AppHelper.PointSnapThreshold * AppHelper.PointSnapThreshold;
 
         foreach (WallPoint point in WallPointManager.Instance._allWallPoints)
         {
@@ -164,7 +191,7 @@ public class EditRoomPointsState : ICameraSubState
 
         return closestPoint;
     }
-        
+
     public void Init(Vector3 worldPos, Vector2 screenPos)
     {
         throw new System.NotImplementedException();
@@ -173,5 +200,41 @@ public class EditRoomPointsState : ICameraSubState
     public void OnPinch(float delta)
     {
         _orthoCam.ZoomCamera(delta);
+    }
+
+    private void SetEditUI()
+    {
+        if (SelectedPoint == null) return;
+
+        Vector3 yOffset = Vector3.up * 1f;
+        Vector3 zOffset = Vector3.forward * 3f;
+
+        Vector3 position = SelectedPoint._position + yOffset + zOffset;
+
+        if (_editUI == null)
+        {
+            // Instantiate and parent under the wall point
+            _editUI = GameObject.Instantiate(
+                GameManager.Instance._uiManager._editUIPrefab,
+                position,
+                Quaternion.identity,
+                SelectedPoint.transform
+            );
+        _editUI.gameObject.name = "EditUI";
+        }
+        else
+        {
+            _editUI.transform.SetParent(SelectedPoint.transform, false);
+        }
+
+        _editUI.Initialize(EditUIType.WallPointEdit);
+    }
+
+    private void DestroyEditUI()
+    {
+        if (_editUI != null)
+        {
+            GameObject.Destroy(_editUI.gameObject);
+        }
     }
 }

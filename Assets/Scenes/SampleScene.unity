@@ -425,7 +425,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &452950455
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1232,6 +1232,7 @@ GameObject:
   - component: {fileID: 963194227}
   - component: {fileID: 963194226}
   - component: {fileID: 963194229}
+  - component: {fileID: 963194230}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -1335,6 +1336,32 @@ MonoBehaviour:
   _moveThreshold: 10
   _lerpSpeed: 3
   _targetOrthoSize: 20
+  _minBounds: {x: -50, y: -50}
+  _maxBounds: {x: 50, y: 50}
+--- !u!114 &963194230
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 963194225}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ce68b6d56ff505b48856aebca2f30573, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _mainCamera: {fileID: 0}
+  _translationSpeed: 15
+  _touchStartWorldPos: {x: 0, y: 0, z: 0}
+  _touchStartScreenPos: {x: 0, y: 0}
+  _target: {x: 0, y: 0, z: 0}
+  _distance: 10
+  _zoomSpeed: 0.1
+  _rotationSpeed: 0.2
+  _panSpeed: 0.005
+  _lerpSpeed: 8
+  _minPitch: 10
+  _maxPitch: 80
 --- !u!1 &967281303
 GameObject:
   m_ObjectHideFlags: 0
@@ -1624,6 +1651,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _allWalls: []
+  _currentSelectedWall: {fileID: 0}
 --- !u!1 &1281901962
 GameObject:
   m_ObjectHideFlags: 0
@@ -1988,6 +2016,7 @@ MonoBehaviour:
   _toggleButton: {fileID: 1185137136}
   _addDoorButton: {fileID: 769900012}
   _addWindowButton: {fileID: 1347849851}
+  _editUIPrefab: {fileID: 565422898971088178, guid: df30c022748d8f942b505c2779f452d5, type: 3}
 --- !u!114 &1418726153
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2522,6 +2551,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 83454b0ae7a6972419569ec503e74462, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _allOpenings: []
 --- !u!1 &2118202440
 GameObject:
   m_ObjectHideFlags: 0

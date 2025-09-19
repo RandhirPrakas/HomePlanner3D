@@ -52,7 +52,7 @@ public class MoveRoomState : ICameraSubState
         _isDragging = true;
     }
 
-    public void OnTouchHold(Vector3 worldPos, Vector2 screenPos)
+    /*public void OnTouchHold(Vector3 worldPos, Vector2 screenPos)
     {
         if (!_isDragging || _activeRoom == null) return;
 
@@ -74,11 +74,46 @@ public class MoveRoomState : ICameraSubState
             foreach (Wall wall in wp.GetConnectedWalls())
             {
                 // Only update walls that are not part of other rooms sharing the point
-                if (wall.GetRoomParent() == _activeRoom)
+                if (wall.GetRoomParent() = _activeRoom)
                     wall.UpdateFromPoints(true);
                 else
                     wall.UpdateFromPoints();
             }
+        }
+
+        _lastMousePosition = worldPos;
+    }*/
+
+    // In MoveRoomState.cs
+    public void OnTouchHold(Vector3 worldPos, Vector2 screenPos)
+    {
+        if (!_isDragging || _activeRoom == null) return;
+
+        Vector3 delta = worldPos - _lastMousePosition;
+        delta.y = 0;
+
+        // 1. Move all points that belong to the active room.
+        foreach (WallPoint wp in _activeRoom._roomWallPoints)
+        {
+            wp.SetPosition(wp._position + delta);
+        }
+
+        // 2. Collect all unique walls that are connected to the moved points.
+        //    Using a HashSet prevents us from updating the same wall multiple times.
+        HashSet<Wall> wallsToUpdate = new HashSet<Wall>();
+        foreach (WallPoint wp in _activeRoom._roomWallPoints)
+        {
+            foreach (Wall wall in wp.GetConnectedWalls())
+            {
+                wallsToUpdate.Add(wall);
+            }
+        }
+
+        // 3. Update the room's floor mesh and every affected wall.
+        _activeRoom.UpdateFloor();
+        foreach (Wall wall in wallsToUpdate)
+        {
+            wall.UpdateFromPoints();
         }
 
         _lastMousePosition = worldPos;

@@ -41,7 +41,7 @@ public class DrawState : ICameraSubState
     public void Exit()
     {
         Debug.Log("Exiting Draw State");
-        // Ensure preview is destroyed if state is exited unexpectedly
+        //Ensure preview is destroyed if state is exited unexpectedly
         DestroyPreview();
     }
 
@@ -92,7 +92,7 @@ public class DrawState : ICameraSubState
 
     public void OnTouchEnd(Vector3 worldPos, Vector2 screenPos)
     {
-        // Drawing is finished, destroy the preview visuals
+        // Drawing is finished, destroy the visuals - LR and Text
         DestroyPreview();
 
         if (_startPos == Vector3.zero)
@@ -129,7 +129,7 @@ public class DrawState : ICameraSubState
             {
                 _snappedEnd = _grid.GetNearestPointOnGrid(worldPos);
             }
-            _snappedEnd = AppHelper.SmartSnapToAxis(_snappedEnd, WallPointManager.Instance._allWallPoints);
+            _snappedEnd = AppHelper.SmartSnapToAxis(_snappedEnd, WallPointManager.Instance._allWallPoints); 
             _snappedEnd = AppHelper.WrapPosition(_startPos, _snappedEnd);
         }
 
@@ -141,7 +141,7 @@ public class DrawState : ICameraSubState
         // cleanup
 
         // sometimes _startPosition is no updated if we start drawing next wall very quickly, so I am deliberately setting the start position to the end of the wall
-        _startPos = worldPos;
+        _startPos = _snappedEnd;
 
     }
 
@@ -152,11 +152,9 @@ public class DrawState : ICameraSubState
 
     private void DrawSingleWall(Vector3 endPosition)
     {
-        endPosition = AppHelper.SmartSnapToAxis(endPosition, WallPointManager.Instance._allWallPoints);
-        endPosition = AppHelper.WrapPosition(_startPos, endPosition);
         endPosition.y = 0;
+        _startPos.y = 0;
         AppHelper.ManageWallsAndWallPoints(_startPos, endPosition, _strandedWalls);
-
         AppEventHandler.InvokeOnWallCreation();
     }
 
@@ -201,6 +199,7 @@ public class DrawState : ICameraSubState
         // --- Setup LineRenderer ---
         _previewLine = _previewObject.AddComponent<LineRenderer>();
         _previewLine.positionCount = 2;
+        startPos.y = 0.6f;
         _previewLine.SetPosition(0, startPos);
         _previewLine.SetPosition(1, startPos);
 
@@ -266,7 +265,7 @@ public class DrawState : ICameraSubState
 
     /// <summary>
     /// Destroys the preview GameObject and cleans up references.
-    /// </summary>
+    /// </summary>G
     private void DestroyPreview()
     {
         if (_previewObject != null)

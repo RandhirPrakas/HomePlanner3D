@@ -12,7 +12,7 @@ public class Wall : MonoBehaviour
 
     [SerializeField] private float _wallLength;
 
-    [SerializeField] private Room _parentRoom;
+    [SerializeField] private List<Room> _parentRooms = new List<Room>();
 
     public LineRenderer _lineRenderer;
 
@@ -30,7 +30,13 @@ public class Wall : MonoBehaviour
     #endregion
 
     #region Getter And Setters
-    public void SetParentRoom(Room room) => _parentRoom = room;
+    public void AddParentRoom(Room room)
+    {
+        if (!_parentRooms.Contains(room))
+        {
+            _parentRooms.Add(room);
+        }
+    }
 
     public WallPoint GetStartWallPoint() => _startWallPoint;
     public void SetStartWallPoint(WallPoint newWallPoint) => _startWallPoint = newWallPoint;
@@ -41,7 +47,7 @@ public class Wall : MonoBehaviour
     public Vector3 GetStartPosition() => new Vector3(_startWallPoint._position.x, 0, _startWallPoint._position.z);
     public Vector3 GetEndPosition() => new Vector3(_endWallPoint._position.x, 0, _endWallPoint._position.z);
 
-    public Room GetRoomParent() => _parentRoom;
+    public List<Room> GetRoomParent() => _parentRooms;
     #endregion
 
     private void Start()
@@ -53,9 +59,6 @@ public class Wall : MonoBehaviour
     {
         _startWallPoint = startPosition;
         _endWallPoint = endPosition;
-
-        if (room != null)
-            _parentRoom = room;
 
         startPosition.SetPosition(startPosition._position);
 
@@ -130,31 +133,6 @@ public class Wall : MonoBehaviour
         UpdateLabel(GetStartPosition(), GetEndPosition());
     }
 
-    /*private void UpdateLabel(Vector3 start, Vector3 end)
-    {
-        if (_labelInstance == null) return;
-
-        Vector3 center = (start + end) * 0.5f;
-        float dirMul = AppHelper.IsClockwise(start, end)?1:-1;
-
-        // Compute perpendicular direction on XZ plane
-        Vector3 wallDir = (end - start).normalized * dirMul;
-        Vector3 perpendicular = new Vector3(-wallDir.z, 0, wallDir.x);
-
-        float offsetDistance = 1f; // distance from wall
-        Vector3 labelPos = center + perpendicular * offsetDistance + Vector3.up * 0.5f;
-
-        _labelInstance.transform.position = labelPos;
-
-        // Rotate the label so it faces the camera or aligns nicely with wall
-        float angle = Mathf.Atan2(wallDir.z, wallDir.x) * Mathf.Rad2Deg;
-        _labelInstance.transform.rotation = Quaternion.Euler(90f, -angle, 0f);
-
-        // Update text
-        _labelInstance.text = _wallLength.ToString("F2") + " ft";
-        _labelInstance.rectTransform.sizeDelta = new Vector2(_wallLength, 0.5f);
-    }*/
-
     private void UpdateLabel(Vector3 start, Vector3 end)
     {
         if (_labelInstance == null) return;
@@ -203,7 +181,7 @@ public class Wall : MonoBehaviour
             Quaternion.LookRotation(dir.normalized, Vector3.up)
         );
 
-        _boxCollider.size = new Vector3(2.5f, 3f, length);
+        _boxCollider.size = new Vector3(4f, 3f, length);
         _boxCollider.center = Vector3.zero;
     }
 
@@ -215,7 +193,7 @@ public class Wall : MonoBehaviour
         _colliderGO.tag = "Wall";
         _colliderGO.transform.SetParent(transform, false);
         _boxCollider = _colliderGO.AddComponent<BoxCollider>();
-        _boxCollider.size = new Vector3(1, 3f, 1f);
+        _boxCollider.size = new Vector3(4f, 3f, 1f);
     }
 
     private void UpdateConenctedWalls()
@@ -255,5 +233,29 @@ public class Wall : MonoBehaviour
 
         DestroyLabel();
         Destroy(gameObject);
+    }
+
+    // In Wall.cs
+
+    // New lightweight method for dragging
+    public void UpdateVisualsOnly()
+    {
+        if (_startWallPoint == null || _endWallPoint == null || _lineRenderer == null)
+            return;
+
+        Vector3 start = _startWallPoint._position;
+        Vector3 end = _endWallPoint._position;
+
+        // The Y-offset should probably be a constant or serialized field
+        start.y = 0.5f;
+        end.y = 0.5f;
+
+        _lineRenderer.SetPosition(0, start);
+        _lineRenderer.SetPosition(1, end);
+    }
+
+    public void ClearParentRooms()
+    {
+        _parentRooms.Clear();
     }
 }

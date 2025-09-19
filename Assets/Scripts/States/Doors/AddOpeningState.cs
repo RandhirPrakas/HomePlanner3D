@@ -74,7 +74,8 @@ public class AddOpeningState<T> : ICameraSubState where T : Opening
         FindNearestWall(worldPos, out proj);
         proj.y = 3f;
 
-        if (!AppHelper.CanPlaceOpening<T>(_targetWall, proj))
+        if (!AppHelper.CanPlaceOpening
+            <T>(_targetWall, proj))
         {
             Debug.Log($"Cannot place {typeof(T).Name}, too close to another opening or wall end.");
             return;
@@ -85,12 +86,12 @@ public class AddOpeningState<T> : ICameraSubState where T : Opening
         visualGO.transform.SetParent(_targetWall.transform);
         visualGO.tag = typeof(T).Name;
 
-        GameObject visualizer = GameObject.Instantiate(_prefab, proj, Quaternion.identity, visualGO.transform);
+        OpeningVisualizer visualizer = GameObject.Instantiate(_prefab, proj, Quaternion.identity, visualGO.transform).GetComponent<OpeningVisualizer>();
         T opening = visualGO.AddComponent<T>();
         opening.Initialize(_targetWall, proj);
         opening.OpeningVisual = visualizer;
-
-        SetOpeningRotation(opening.OpeningVisual, _targetWall);
+        visualizer.SetDefaultColor();
+        SetOpeningRotation(opening.OpeningVisual.gameObject, _targetWall);
         Debug.Log($"{typeof(T).Name} placed on {_targetWall.name} at {proj}");
 
         if (_preview != null)

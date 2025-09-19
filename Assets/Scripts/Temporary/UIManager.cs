@@ -11,6 +11,8 @@ public class UIManager : MonoBehaviour
     [SerializeField] private Button _addDoorButton;
     [SerializeField] private Button _addWindowButton;
 
+    public EditUI _editUIPrefab;
+
     private void OnEnable()
     {
         _toggleButton.onClick.AddListener(() => ToggleCamerStates());

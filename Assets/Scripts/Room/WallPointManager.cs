@@ -8,6 +8,7 @@ public class WallPointManager : MonoBehaviour
 
     public List<WallPoint> _allWallPoints = new List<WallPoint>();
 
+    public WallPoint _currentActiveWallpoint;
     private void Awake()
     {
         if (Instance == null)
@@ -47,7 +48,7 @@ public class WallPointManager : MonoBehaviour
         {
             if (wp == wallpoint) continue;
 
-            if (Vector3.Distance(wp._position, position) < AppHelper._pointSnapThreshold)
+            if (Vector3.Distance(wp._position, position) < AppHelper.PointSnapThreshold)
             {
                 return wp;
             }
@@ -112,7 +113,7 @@ public class WallPointManager : MonoBehaviour
         // Remove Wall Reference
         foreach (Wall wall in wallPoint.GetConnectedWalls().ToList())
         {
-            WallManager.Instance.DestroyWall(wall);
+            WallManager.Instance.DeleteWall(wall);
         }
 
         // Remove Connected wallPoint references
@@ -126,6 +127,18 @@ public class WallPointManager : MonoBehaviour
         Destroy(wallPoint.gameObject);
 
         AppEventHandler.InvokeOnWallCreation();
+    }
+
+    public void RemoveStandaloneWallpoints()
+    {
+        foreach(WallPoint wp in  _allWallPoints)
+        {
+            if(wp.GetConnectedWallPoints().Count == 0)
+            {
+                _allWallPoints.Remove(wp);
+                Destroy(wp.gameObject);
+            }
+        }
     }
 
 }

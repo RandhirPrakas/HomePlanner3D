@@ -13,6 +13,8 @@ public static class Constants
     public static string TAG_WINDOW = "Window";
     public static string TAG_GROUND = "Ground";
     public static string TAG_WALL = "Wall";
+    public static string TAG_PLACABLES = "Placables";
+    public static string TAG_ROOM = "Room";   
 
     #endregion
 }

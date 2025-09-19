@@ -37,7 +37,7 @@ public static class WallMeshGenerator
 
             foreach (var opening in orderedOpenings)
             {
-                var strategy = OpeningCreationFactory.GetStrategy(opening.OpeningType);
+                var strategy = OpeningCreationFactory.CreateOpening(opening.OpeningType);
                 strategy.AddOpeningSegments(wall, opening, startLS, endLS, dirLS, ref cursorLS, segments);
             }
 

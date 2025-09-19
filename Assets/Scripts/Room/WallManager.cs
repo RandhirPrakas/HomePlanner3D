@@ -11,6 +11,8 @@ public class WallManager : MonoBehaviour
 
     public static int _wallIndex = 0;
 
+    public Wall _currentSelectedWall;
+
     private void Awake()
     {
         if (Instance == null)
@@ -35,11 +37,11 @@ public class WallManager : MonoBehaviour
 
     private void ManageWalls()
     {
-        foreach(Room room in RoomManager.Instance._allRooms)
+        foreach (Room room in RoomManager.Instance._allRooms)
         {
-            foreach(Wall wall in _allWalls)
+            foreach (Wall wall in _allWalls)
             {
-                if(room._roomWallPoints.Contains(wall.GetStartWallPoint()) && room._roomWallPoints.Contains(wall.GetEndWallPoint()))
+                if (room._roomWallPoints.Contains(wall.GetStartWallPoint()) && room._roomWallPoints.Contains(wall.GetEndWallPoint()) && !room._roomWalls.Contains(wall))
                 {
                     room._roomWalls.Add(wall);
                     //wall.transform.SetParent(room.transform);
@@ -50,46 +52,47 @@ public class WallManager : MonoBehaviour
         OpeningManager.Instance.TryReattachAll();
     }
 
-    public void DestroyWall(Wall wall)
+    public void DeleteWall(Wall wall, bool deleteOpenings = false)
     {
         if (wall == null) return;
 
+        _wallIndex--;
+        // Clean up openings safely
         foreach (var opening in new List<Opening>(wall._allOpenings))
         {
-            opening.Detach();
+            if (deleteOpenings)
+            {
+
+                wall._allOpenings.Remove(opening);
+                OpeningManager.Instance.DeleteOpening(opening);
+            }
+            else
+                opening.Detach();
         }
 
-        // Disconnect endpoints first
-        wall.GetStartWallPoint()?.RemoveConnectedWall(wall);
-        wall.GetEndWallPoint()?.RemoveConnectedWall(wall);
-
-        _allWalls.Remove(wall);
-        Destroy(wall.gameObject);
-        _allWalls.RemoveAll(w => w == null);
-    }
-
-    public void DeleteWall(Wall wall)
-    {
-        if (wall == null)
-            return;
-
-        foreach (var opening in new List<Opening>(wall._allOpenings))
-        {
-            opening.Detach();
-        }
-
+        // Disconnect endpoints 
         WallPoint start = wall.GetStartWallPoint();
         WallPoint end = wall.GetEndWallPoint();
 
-        // Remove Connected WalPoints
-        start.RemoveConnectedWallPoint(end);
-        end.RemoveConnectedWallPoint(start);
+        if (start != null && end != null)
+        {
+            start.RemoveConnectedWallPoint(end);
+            end.RemoveConnectedWallPoint(start);
+        }
 
-        // Remove Connected Wall
         start?.RemoveConnectedWall(wall);
         end?.RemoveConnectedWall(wall);
 
+        // Remove from global wall list
+        _allWalls.Remove(wall);
+
+        // Destroy wall GameObject
         Destroy(wall.gameObject);
+
+        // Clean out any null references
+        _allWalls.RemoveAll(w => w == null);
+
+        // Fire event
         AppEventHandler.InvokeOnWallCreation();
     }
 
@@ -123,8 +126,25 @@ public class WallManager : MonoBehaviour
             }
         }
 
-        //if (minDist > snapThreshold) nearest = null;
         return nearest;
+    }
+
+    public Bounds GetSceneBounds()
+    {
+        if (_allWalls == null || _allWalls.Count == 0)
+            return new Bounds(Vector3.zero, Vector3.zero);
+
+        // Initialize with first wall
+        Bounds bounds = new Bounds(_allWalls[0].transform.position, Vector3.zero);
+
+        foreach (Wall wall in _allWalls)
+        {
+            if (wall == null) continue;
+            bounds.Encapsulate(wall.GetStartPosition());
+            bounds.Encapsulate(wall.GetEndPosition());
+        }
+
+        return bounds;
     }
 
 }

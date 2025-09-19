@@ -3,30 +3,40 @@ using UnityEngine;
 
 public abstract class Opening : MonoBehaviour
 {
-    [SerializeField] private List<Wall> _connectedWalls = new List<Wall>();
 
     [SerializeField] private OpeningType _openingType = OpeningType.Door;
-    [SerializeField] private Vector3 _openingPosition; // local position along the wall
+    [SerializeField] private Vector3 _openingPosition;
     [SerializeField] private float _width = 2f;
     [SerializeField] private float _height = 2f;
 
     [SerializeField] private GameObject _strandedOpenings;
-    [SerializeField] private GameObject _openingVisualizer;
+    public OpeningVisualizer _openingVisualizer;
+
 
     public Transform StrandedOpening { get => _strandedOpenings.transform; }
-    public GameObject OpeningVisual { get => _openingVisualizer; set => _openingVisualizer = value; }
+    public OpeningVisualizer OpeningVisual { get => _openingVisualizer; set => _openingVisualizer = value; }
 
     public Wall _parentWall;
     public Wall _lastWall;
 
     #region Properties
-    public float Width { get => _width; set => _width = value; }
+    public float Width
+    {
+        get => _width;
+        set
+        {
+            _width = value;
+            if (_openingVisualizer != null)
+            {
+                _openingVisualizer.UpdateWidth(_width);
+            }
+        }
+    }
     public float Height { get => _height; set => _height = value; }
     public Vector3 OpeningPosition { get => _openingPosition; set => _openingPosition = value; }
     public OpeningType OpeningType { get => _openingType; set => _openingType = value; }
     public Wall ParentWall => _parentWall;
 
-    public List<Wall> ConnectedWall { get => _connectedWalls; }
     #endregion
 
     private void Awake()

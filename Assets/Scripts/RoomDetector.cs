@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+ï»¿using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 
@@ -13,33 +13,47 @@ public class RoomDetector : MonoBehaviour
 
     private void OnEnable()
     {
-        AppEventHandler.OnWallCreation += (() => DetectRooms(WallPointManager.Instance._allWallPoints)); 
+        AppEventHandler.OnWallCreation += HandleWallCreation;
     }
 
     private void OnDisable()
     {
-        AppEventHandler.OnWallCreation -= (() => DetectRooms(WallPointManager.Instance._allWallPoints));
+        AppEventHandler.OnWallCreation -= HandleWallCreation;
+    }
+
+    private void HandleWallCreation()
+    {
+        DetectRooms(WallPointManager.Instance._allWallPoints);
     }
 
     public void DetectRooms(List<WallPoint> allPoints)
     {
-        var cycles = Johnson(allPoints);
+        foreach (var wall in WallManager.Instance._allWalls)
+        {
+            wall.ClearParentRooms();
+        }
+
+        // 1. Use the corrected algorithm to find all minimal cycles (room boundaries).
+        var cycles = FindMinimalCycles(allPoints);
+
+        // 2. Re-introduce the filter to handle the specific case of nested rooms.
         cycles = FilterRooms(cycles);
 
-        foreach(Room room in RoomManager.Instance._allRooms)
+        // Clear existing rooms before creating new ones
+        foreach (Room room in RoomManager.Instance._allRooms)
         {
-            room.RemoveRoom();
+            if (room != null && room.gameObject != null)
+                room.RemoveRoom();
         }
         RoomManager.Instance._allRooms.Clear();
 
+        // Create new rooms from the final, filtered list of cycles
         foreach (var cycle in cycles)
         {
-            if(cycle.Count>2)
+            if (cycle.Count > 2)
                 CreateRoom(cycle);
         }
 
-        // Manage walls
-        // All Rooms should be Created by now
         AppEventHandler.InvokeOnRoomCreation();
     }
 
@@ -49,96 +63,250 @@ public class RoomDetector : MonoBehaviour
         Room roomComp = roomGO.AddComponent<Room>();
         roomComp.Initialize(cyclePoints);
         RoomManager.Instance._allRooms.Add(roomComp);
-
-
-        // Parent for organization
         roomGO.transform.SetParent(this.transform);
     }
 
-
-    private List<List<WallPoint>> Johnson(List<WallPoint> allPoints)
+    /*private List<List<WallPoint>> FindMinimalCycles(List<WallPoint> allPoints)
     {
-        var index = new Dictionary<WallPoint, int>();
-        for (int i = 0; i < allPoints.Count; i++)
-            index[allPoints[i]] = i;
-
-        var adj = new Dictionary<WallPoint, List<WallPoint>>();
-        foreach (var p in allPoints)
-            adj[p] = p.GetConnectedWallPoints();
-
         var cycles = new List<List<WallPoint>>();
-        var blocked = new Dictionary<WallPoint, bool>();
-        var B = new Dictionary<WallPoint, HashSet<WallPoint>>();
-        var stack = new Stack<WallPoint>();
+        var visitedDirectedEdges = new HashSet<(WallPoint, WallPoint)>();
+        var adj = allPoints.ToDictionary(p => p, p => p.GetConnectedWallPoints());
 
-        void Unblock(WallPoint u)
+        foreach (var startPoint in allPoints)
         {
-            blocked[u] = false;
-            foreach (var w in B[u].ToList())
+            foreach (var firstHop in adj[startPoint])
             {
-                B[u].Remove(w);
-                if (blocked[w])
-                    Unblock(w);
+                if (visitedDirectedEdges.Contains((startPoint, firstHop)))
+                    continue;
+
+                var currentCycle = new List<WallPoint> { startPoint };
+                var previous = startPoint;
+                var current = firstHop;
+
+                while (current != startPoint)
+                {
+                    visitedDirectedEdges.Add((previous, current));
+                    currentCycle.Add(current);
+
+                    var neighbors = adj[current];
+                    if (neighbors.Count < 2) { current = null; break; }
+
+                    Vector3 incomingVec = current._position - previous._position;
+                    WallPoint bestNextPoint = null;
+
+                    // --- CORRECTED LOGIC IS HERE ---
+                    // We look for the MINIMUM angle (sharpest right turn)
+                    // to find the inner, minimal rooms.
+                    float minAngle = 361f;
+
+                    foreach (var candidate in neighbors)
+                    {
+                        if (candidate == previous) continue;
+                        Vector3 outgoingVec = candidate._position - current._position;
+                        float angle = Vector3.SignedAngle(incomingVec, outgoingVec, Vector3.up);
+
+                        // Find the smallest signed angle (the sharpest "right turn")
+                        if (angle < minAngle)
+                        {
+                            minAngle = angle;
+                            bestNextPoint = candidate;
+                        }
+                    }
+
+                    previous = current;
+                    current = bestNextPoint;
+                    if (current == null) break;
+                }
+
+                if (current == startPoint && currentCycle.Count > 2)
+                {
+                    visitedDirectedEdges.Add((previous, current));
+                    cycles.Add(currentCycle);
+                }
             }
         }
+        return cycles.Distinct(new CycleComparer()).ToList();
+    }*/
 
-        bool Circuit(WallPoint v, WallPoint start)
+    private List<List<WallPoint>> FindMinimalCycles(List<WallPoint> allPoints)
+    {
+        var cycles = new List<List<WallPoint>>();
+        var visitedDirectedEdges = new HashSet<(WallPoint, WallPoint)>();
+        var adj = allPoints.ToDictionary(p => p, p => p.GetConnectedWallPoints());
+
+        foreach (var startPoint in allPoints)
         {
-            bool f = false;
-            stack.Push(v);
-            blocked[v] = true;
-
-            foreach (var w in adj[v])
+            foreach (var firstHop in adj[startPoint])
             {
-                if (w == start)
+                if (visitedDirectedEdges.Contains((startPoint, firstHop)))
+                    continue;
+
+                var currentCycle = new List<WallPoint> { startPoint };
+                var previous = startPoint;
+                var current = firstHop;
+
+                while (current != startPoint)
                 {
-                    // Found a cycle
-                    cycles.Add(stack.Reverse().ToList());
-                    f = true;
+                    visitedDirectedEdges.Add((previous, current));
+                    currentCycle.Add(current);
+
+                    var neighbors = adj[current];
+                    if (neighbors.Count < 2) { current = null; break; }
+
+                    Vector3 incomingVec = current._position - previous._position;
+                    WallPoint bestNextPoint = null;
+
+                    // --- START OF CORRECTED AND ROBUST LOGIC ---
+                    float minAngle = 361f;
+                    WallPoint straightLineCandidate = null; // To hold the point that continues straight
+
+                    foreach (var candidate in neighbors)
+                    {
+                        if (candidate == previous) continue;
+
+                        Vector3 outgoingVec = candidate._position - current._position;
+                        float angle = Vector3.SignedAngle(incomingVec, outgoingVec, Vector3.up);
+
+                        // Check if this path is nearly a straight line (180 or -180 degrees)
+                        if (Mathf.Abs(Mathf.Abs(angle) - 180.0f) < 1.0f)
+                        {
+                            straightLineCandidate = candidate;
+                            continue; // Deprioritize this path for now, look for actual turns first.
+                        }
+
+                        // Find the minimum angle among the actual turns.
+                        if (angle < minAngle)
+                        {
+                            minAngle = angle;
+                            bestNextPoint = candidate;
+                        }
+                    }
+
+                    // If no real turn was found (bestNextPoint is still null),
+                    // then our only option is to go straight.
+                    if (bestNextPoint == null)
+                    {
+                        bestNextPoint = straightLineCandidate;
+                    }
+                    // --- END OF CORRECTED AND ROBUST LOGIC ---
+
+                    previous = current;
+                    current = bestNextPoint;
+                    if (current == null) break;
                 }
-                else if (!blocked[w])
+
+                if (current == startPoint && currentCycle.Count > 2)
                 {
-                    if (Circuit(w, start))
-                        f = true;
+                    visitedDirectedEdges.Add((previous, current));
+                    cycles.Add(currentCycle);
                 }
             }
-
-            if (f)
-            {
-                Unblock(v);
-            }
-            else
-            {
-                foreach (var w in adj[v])
-                {
-                    if (!B[w].Contains(v))
-                        B[w].Add(v);
-                }
-            }
-
-            stack.Pop();
-            return f;
         }
-
-        // Main loop
-        foreach (var s in allPoints)
-        {
-            foreach (var p in allPoints)
-            {
-                blocked[p] = false;
-                B[p] = new HashSet<WallPoint>();
-            }
-
-            Circuit(s, s);
-        }
-
-        // Deduplicate cycles (rooms may appear multiple times rotated/flipped)
-        var distinctCycles = cycles.Distinct(new CycleComparer()).ToList();
-
-        return distinctCycles;
+        return cycles.Distinct(new CycleComparer()).ToList();
     }
 
-    // Shoelace formula for polygon area (XZ-plane since y is height)
+    private List<List<WallPoint>> FilterRooms(List<List<WallPoint>> cycles)
+    {
+        // If we only found one room, there's nothing to filter.
+        if (cycles.Count <= 1)
+            return cycles;
+
+        // 1. Calculate the bounding box for every cycle found.
+        var cyclesWithBounds = cycles.Select(cycle =>
+        {
+            if (cycle.Count == 0)
+                return new { cycle, bounds = new Bounds() }; // Handle empty cycle case
+
+            var bounds = new Bounds(cycle[0]._position, Vector3.zero);
+            foreach (var point in cycle)
+            {
+                bounds.Encapsulate(point._position);
+            }
+            return new { cycle, bounds };
+        }).ToList();
+
+        // 2. Find the cycle with the largest bounding box. This is our candidate for the "exterior" room.
+        var largestBoundsEntry = cyclesWithBounds
+            .OrderByDescending(x => x.bounds.size.x * x.bounds.size.z)
+            .FirstOrDefault();
+
+        if (largestBoundsEntry == null)
+            return cycles; // Should not happen with valid cycles
+
+        // 3. Verify it's the exterior by making sure it contains ALL other rooms' bounds.
+        bool isExterior = true;
+        foreach (var entry in cyclesWithBounds)
+        {
+            if (entry == largestBoundsEntry) continue;
+
+            // A contains B if A.min <= B.min and A.max >= B.max
+            if (largestBoundsEntry.bounds.min.x > entry.bounds.min.x ||
+                largestBoundsEntry.bounds.min.z > entry.bounds.min.z ||
+                largestBoundsEntry.bounds.max.x < entry.bounds.max.x ||
+                largestBoundsEntry.bounds.max.z < entry.bounds.max.z)
+            {
+                // If the largest bounds fails to contain even one other bounds, it's not the exterior.
+                isExterior = false;
+                break;
+            }
+        }
+
+        // 4. If we confirmed it's the exterior room, return a list of all OTHER rooms.
+        if (isExterior)
+        {
+            return cycles.Where(c => c != largestBoundsEntry.cycle).ToList();
+        }
+
+        // 5. Fallback: If no single room contains all others (e.g., two separate buildings),
+        // then there is no "exterior" room to remove, so return everything.
+        return cycles;
+    }
+
+    /*private List<List<WallPoint>> FilterRooms(List<List<WallPoint>> allCycles)
+    {
+        if (allCycles.Count <= 1)
+            return allCycles;
+
+        var finalRooms = new List<List<WallPoint>>();
+
+        // For every cycle, check if it contains any OTHER cycle.
+        for (int i = 0; i < allCycles.Count; i++)
+        {
+            var candidateRoom = allCycles[i];
+            bool isMinimal = true; // Assume the room is valid until proven otherwise.
+
+            for (int j = 0; j < allCycles.Count; j++)
+            {
+                if (i == j) continue; // Don't check a room against itself.
+
+                var otherRoom = allCycles[j];
+
+                // If the candidate room is bigger and contains another room, it's not a minimal room.
+                // We use a simple area check as a performance shortcut before the more expensive polygon check.
+                if (PolygonArea(candidateRoom) > PolygonArea(otherRoom))
+                {
+                    // Get a guaranteed inside point of the smaller room.
+                    Vector3 pointInsideOther = GetGuaranteedInsidePoint(otherRoom);
+
+                    // Check if our candidate room contains this point.
+                    if (PointInPolygon(pointInsideOther, candidateRoom))
+                    {
+                        isMinimal = false; 
+                        break;
+                    }
+                }
+            }
+
+            // If, after checking against all other rooms, isMinimal is still true, it's a valid room.
+            if (isMinimal)
+            {
+                finalRooms.Add(candidateRoom);
+            }
+        }
+
+        return finalRooms;
+    }*/
+
     private float PolygonArea(List<WallPoint> points)
     {
         float area = 0f;
@@ -151,65 +319,6 @@ public class RoomDetector : MonoBehaviour
         return Mathf.Abs(area) * 0.5f;
     }
 
-    // Point-in-polygon (ray casting)
-    private bool PointInPolygon(Vector3 point, List<WallPoint> polygon)
-    {
-        bool inside = false;
-        int j = polygon.Count - 1;
-        for (int i = 0; i < polygon.Count; j = i++)
-        {
-            Vector3 pi = polygon[i]._position;
-            Vector3 pj = polygon[j]._position;
-
-            if (((pi.z > point.z) != (pj.z > point.z)) &&
-                (point.x < (pj.x - pi.x) * (point.z - pi.z) / (pj.z - pi.z) + pi.x))
-            {
-                inside = !inside;
-            }
-        }
-        return inside;
-    }
-
-    // Filter cycles -> keep only minimal rooms
-    private List<List<WallPoint>> FilterRooms(List<List<WallPoint>> cycles)
-    {
-        // Remove trivial cycles
-        var valid = cycles.Where(c => c.Count >= 3).ToList();
-
-        // Sort by area (smallest first)
-        var withArea = valid
-            .Select(c => new { cycle = c, area = PolygonArea(c) })
-            .OrderBy(a => a.area)
-            .ToList();
-
-        var finalRooms = new List<List<WallPoint>>();
-
-        foreach (var entry in withArea)
-        {
-            bool containsSmaller = false;
-
-            // Check if this polygon fully contains any already accepted smaller polygon
-            foreach (var existingRoom in finalRooms)
-            {
-                // *** THIS IS THE ONLY PART THAT CHANGES ***
-                // OLD check was: if (existingRoom.All(p => PointInPolygon(p._position, entry.cycle)))
-                // NEW check uses the centroid for a more robust test.
-                Vector3 centroidOfExisting = GetPolygonCentroid(existingRoom);
-                if (PointInPolygon(centroidOfExisting, entry.cycle))
-                {
-                    // This large cycle wraps around a smaller one -> discard it
-                    containsSmaller = true;
-                    break;
-                }
-            }
-
-            if (!containsSmaller)
-                finalRooms.Add(entry.cycle);
-        }
-
-        return finalRooms;
-    }
-    // Calculates the centroid (geometric center) of a polygon on the XZ plane
     private Vector3 GetPolygonCentroid(List<WallPoint> points)
     {
         float accumulatedArea = 0f;
@@ -227,15 +336,65 @@ public class RoomDetector : MonoBehaviour
         }
 
         if (Mathf.Abs(accumulatedArea) < 1e-7f)
-            return Vector3.zero; // Or handle this case as you see fit
+            return Vector3.zero;
 
         accumulatedArea *= 3f;
         return new Vector3(centerX / accumulatedArea, 0, centerZ / accumulatedArea);
     }
 
-    // Helper: expose connected points
-    // (add this to WallPoint if you want, but here I’ll just assume accessor)
-    // public List<WallPoint> GetConnectedPoints() => _connectedWallPoints;
+    private Vector3 GetGuaranteedInsidePoint(List<WallPoint> polygon)
+    {
+        if (polygon == null || polygon.Count < 3)
+        {
+            return Vector3.zero; // Or handle error appropriately
+        }
+        // The centroid of the first triangle is guaranteed to be inside the polygon
+        Vector3 p1 = polygon[0]._position;
+        Vector3 p2 = polygon[1]._position;
+        Vector3 p3 = polygon[2]._position;
+
+        return (p1 + p2 + p3) / 3.0f;
+    }
+
+    /*private bool PointInPolygon(Vector3 point, List<WallPoint> polygon)
+    {
+        bool inside = false;
+        for (int i = 0, j = polygon.Count - 1; i < polygon.Count; j = i++)
+        {
+            Vector3 pi = polygon[i]._position;
+            Vector3 pj = polygon[j]._position;
+            if (((pi.z > point.z) != (pj.z > point.z)) &&
+                (point.x < (pj.x - pi.x) * (point.z - pi.z) / (pj.z - pi.z) + pi.x))
+            {
+                inside = !inside;
+            }
+        }
+        return inside;
+    }*/
+
+    private bool PointInPolygon(Vector3 point, List<WallPoint> polygon)
+    {
+        bool inside = false;
+        for (int i = 0, j = polygon.Count - 1; i < polygon.Count; j = i++)
+        {
+            Vector3 pi = polygon[i]._position;
+            Vector3 pj = polygon[j]._position;
+
+            // Check if the point is between the y-coordinates of the edge
+            if (((pi.z > point.z) != (pj.z > point.z)))
+            {
+                // Calculate the x-intersection of the line
+                float xIntersection = (pj.x - pi.x) * (point.z - pi.z) / (pj.z - pi.z) + pi.x;
+
+                // This check now correctly handles vertical lines because of the first condition
+                if (point.x < xIntersection)
+                {
+                    inside = !inside;
+                }
+            }
+        }
+        return inside;
+    }
 
     private class CycleComparer : IEqualityComparer<List<WallPoint>>
     {
@@ -247,9 +406,11 @@ public class RoomDetector : MonoBehaviour
 
         public int GetHashCode(List<WallPoint> obj)
         {
-            int hash = 17;
-            foreach (var p in obj)
+            int hash = 0;
+            foreach (var p in obj.OrderBy(point => point.GetInstanceID()))
+            {
                 hash ^= p.GetHashCode();
+            }
             return hash;
         }
     }

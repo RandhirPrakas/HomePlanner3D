@@ -28,8 +28,41 @@ public static class AppHelper
 
     #region Variables_PointsManagements
 
-    public static readonly float _pointSnapThreshold = 2f;
-    public static readonly float _nearestWallSnapThreshold = 2f;
+    public static float PointSnapThreshold
+    {
+        get
+        {
+            Camera cam = Camera.main;
+            if (cam == null) return 2f;
+
+            if (cam.orthographic)
+            {
+                OrthoCam OrthoCamRef = cam.GetComponent<OrthoCam>();
+                // OrthoCam: interpolate threshold between 2 (zoom in) and 4 (zoom out)
+                float t = Mathf.InverseLerp(
+                    OrthoCamRef.GetMinOrthoSize(),
+                    OrthoCamRef.GetMaxOrthoSize(),
+                    cam.orthographicSize
+                );
+                //Debug.Log($"Current Snap Value {Mathf.Lerp(2f, 4f, t)}");
+                return Mathf.Lerp(2f, 4f, t);
+            }
+            else
+            {
+                // PerspCam: interpolate based on distance
+                PerspCam persp = cam.GetComponent<PerspCam>();
+                if (persp != null)
+                {
+                    float t = Mathf.InverseLerp(2f, 50f, persp.GetCurrentDistance());
+                    return Mathf.Lerp(2f, 4f, t);
+                }
+            }
+
+            return 2f;
+        }
+    }
+
+    public static float NearestWallSnapThreshold => PointSnapThreshold;
 
     #endregion
 
@@ -42,7 +75,7 @@ public static class AppHelper
     // this check if distance between two point is 
     public static bool CanSnapPoint(Vector3 a, Vector3 b)
     {
-        return Vector3.Distance(a, b) < _pointSnapThreshold;
+        return Vector3.Distance(a, b) < PointSnapThreshold;
     }
 
     // pointToSnap will be snapped to snapPosition
@@ -68,11 +101,11 @@ public static class AppHelper
 
     public static Vector3 WrapPosition(Vector3 startPosition, Vector3 endPosition)
     {
-        if (Mathf.Abs(startPosition.x - endPosition.x) < _pointSnapThreshold)
+        if (Mathf.Abs(startPosition.x - endPosition.x) < PointSnapThreshold)
         {
             endPosition = new Vector3(startPosition.x, endPosition.y, endPosition.z);
         }
-        else if (Mathf.Abs(startPosition.z - endPosition.z) < _pointSnapThreshold)
+        else if (Mathf.Abs(startPosition.z - endPosition.z) < PointSnapThreshold)
         {
             endPosition = new Vector3(endPosition.x, endPosition.y, startPosition.z);
         }
@@ -257,7 +290,7 @@ public static class AppHelper
         Vector3 closest = lineStart + t * lineDir;
         float dist = Vector3.Distance(point, closest);
 
-        if (dist <= AppHelper._nearestWallSnapThreshold)
+        if (dist <= NearestWallSnapThreshold)
         {
             snappedPoint = closest;
             return true;
@@ -266,7 +299,7 @@ public static class AppHelper
         return false;
     }
 
-    public static bool CanPlaceOpening<T>(Wall wall, Vector3 position) where T : Opening
+    public static bool CanPlaceOpening<T>(Wall wall, Vector3 position, Opening currentOpening = null) where T : Opening
     {
         if (wall == null) return false;
 
@@ -280,8 +313,11 @@ public static class AppHelper
         // --- Check against existing openings on the wall ---
         foreach (Opening existing in wall._allOpenings)
         {
-            if (existing == null) continue;
-
+            if (existing == null || (currentOpening != null && existing == currentOpening))
+            {
+                Debug.Log("Existing Door Found or Door is Null");
+                continue;
+            }
             // Skip if it's the same opening (during edit)
             if (existing is T typed && typed.OpeningPosition == position)
                 continue;
@@ -308,6 +344,7 @@ public static class AppHelper
         Vector2 bXZ = new Vector2(b.x, b.z);
         return Vector2.Distance(aXZ, bXZ);
     }
+
 
     #region Helper for Drawing 
 
@@ -347,12 +384,12 @@ public static class AppHelper
             }
         }
 
-        if (closestXDiff < _pointSnapThreshold)
+        if (closestXDiff < PointSnapThreshold)
         {
             currentPosition.x = snapX.Value;
         }
 
-        if (closestZDiff < _pointSnapThreshold)
+        if (closestZDiff < PointSnapThreshold)
         {
             currentPosition.z = snapZ.Value;
         }
@@ -378,12 +415,12 @@ public static class AppHelper
 
         wall.GetStartWallPoint().RemoveConnectedWallPoint(wall.GetEndWallPoint());
         wall.GetEndWallPoint().RemoveConnectedWallPoint(wall.GetStartWallPoint());
-        WallManager.Instance.DestroyWall(wall);
+        WallManager.Instance.DeleteWall(wall);
     }
 
     public static Wall DrawWall(WallPoint startPoint, WallPoint endPoint, Transform strandedWalls = null)
     {
-        GameObject wallGO = new GameObject($"Wall");
+        GameObject wallGO = new GameObject($"Wall_{WallManager._wallIndex++}");
         Wall wallComp = wallGO.AddComponent<Wall>();
         wallGO.transform.SetParent(strandedWalls);
         wallComp.SetStartAndEndPosition(startPoint, endPoint);
@@ -404,7 +441,7 @@ public static class AppHelper
 
     public static void ManageWallsAndWallPoints(Vector3 start, Vector3 end, Transform _strandedWalls = null)
     {
-        float endpointSnapThreshold = AppHelper._nearestWallSnapThreshold;
+        float endpointSnapThreshold = NearestWallSnapThreshold;
 
         #region Phase 1: Snapping Start Point
         Vector3 bestSnapForStart = start;
@@ -553,17 +590,8 @@ public static class AppHelper
         {
             // Case B: No cross-intersections. The new wall is a single segment.
             // This correctly creates the wall for both standalone cases and T-junction cases.
-            /*Debug.Log("No intersections. Creating a single new wall.");
-
-            if (!AppHelper.WallExists(newWallStartPoint, newWallEndPoint))
-            {
-                wallsToCreate.Add(AppHelper.DrawWall(newWallStartPoint, newWallEndPoint, _strandedWalls));
-            }
-            else
-            {
-                Debug.Log("Skipped wall creation because it already exists.");
-            }*/
-            Debug.Log("No intersections. Creating a single new wall.");
+            
+            //Debug.Log("No intersections. Creating a single new wall.");
             wallsToCreate.Add(AppHelper.DrawWall(newWallStartPoint, newWallEndPoint, _strandedWalls));
         }
 

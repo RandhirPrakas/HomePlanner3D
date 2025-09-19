@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 4950748515987593560}
   - component: {fileID: 3126461302909597334}
   m_Layer: 0
-  m_Name: RightHandle
+  m_Name: Circle (1)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -27,7 +27,7 @@ Transform:
   m_GameObject: {fileID: 139981335358135939}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 1.2, y: 0, z: -0.1}
+  m_LocalPosition: {x: 1, y: 0, z: 0}
   m_LocalScale: {x: 0.2, y: 0.2, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -104,8 +104,8 @@ SphereCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Radius: 0.5
-  m_Center: {x: 0.6, y: 0, z: -0.3}
+  m_Radius: 0.1
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &2545404878124132229
 GameObject:
   m_ObjectHideFlags: 0
@@ -118,7 +118,7 @@ GameObject:
   - component: {fileID: 4835206561673745366}
   - component: {fileID: 7928061461768535888}
   m_Layer: 0
-  m_Name: LeftHandle
+  m_Name: Circle
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -133,7 +133,7 @@ Transform:
   m_GameObject: {fileID: 2545404878124132229}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -1.2, y: 0, z: -0.1}
+  m_LocalPosition: {x: -1, y: 0, z: 0}
   m_LocalScale: {x: 0.20000002, y: 0.20000002, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -210,8 +210,8 @@ SphereCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Radius: 0.5
-  m_Center: {x: -0.6, y: 0, z: -0.3}
+  m_Radius: 0.1
+  m_Center: {x: 0.000000029802322, y: 0, z: 0}
 --- !u!1 &2669326243274449098
 GameObject:
   m_ObjectHideFlags: 0
@@ -221,9 +221,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3555746627763806222}
-  - component: {fileID: 6462918895604550551}
   m_Layer: 0
-  m_Name: DoorVisualizer
+  m_Name: DoorVisualizer 1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -237,7 +236,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2669326243274449098}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: -1}
+  m_LocalRotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
   m_LocalPosition: {x: 0, y: 3, z: -4}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -247,25 +246,6 @@ Transform:
   - {fileID: 3954955736748715322}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 90, y: 0, z: 0}
---- !u!114 &6462918895604550551
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2669326243274449098}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bc1c9d130aaff10438097bb60be86670, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _defaultColor: {r: 0, g: 0, b: 0, a: 1}
-  _highlightedColor: {r: 0.62352943, g: 0.9529412, b: 0.3019608, a: 1}
-  _square: {fileID: 945802210190289764}
-  _mainCollider: {fileID: 4320743674023485262}
-  _leftTransform: {fileID: 3149761298429943009}
-  _rightTransform: {fileID: 3954955736748715322}
-  LogicalToVisualScaleFactor: 0.4
 --- !u!1 &8972219096131076305
 GameObject:
   m_ObjectHideFlags: 0
@@ -294,7 +274,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 0.2, z: 1}
+  m_LocalScale: {x: 0.75, y: 0.2, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 3555746627763806222}
@@ -341,7 +321,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_Sprite: {fileID: 21300000, guid: 4276a59cc18c4594990d71cfc7714c9d, type: 3}
-  m_Color: {r: 0.62352943, g: 0.9529412, b: 0.3019608, a: 1}
+  m_Color: {r: 0, g: 0, b: 0, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -370,5 +350,5 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 2, y: 7.5, z: 0.5}
+  m_Size: {x: 4, y: 5, z: 1}
   m_Center: {x: 0, y: 0, z: 0}

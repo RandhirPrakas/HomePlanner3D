@@ -7,10 +7,12 @@ public class SubStateManager
 
     private ICameraSubState _perspIdleState;
     private ICameraSubState _orthoIdleState;
-    private EditRoomPointsState _editPointState;
 
     private OrthoCam _orthoCam;
+    private PerspCam _perspcam;
+
     public OrthoCam OrthoCamera { get => _orthoCam; set => _orthoCam = value; }
+    private PerspCam PerspectiveCam { get => _perspcam; set => _perspcam = value; }
 
     private float _inputBlockTime = 0f;
     public void SetSubState(ICameraSubState newState)
@@ -30,9 +32,8 @@ public class SubStateManager
 
         OrthoCamera = GameManager.Instance.GetOrthoCamera();
 
-        _perspIdleState = new Persp_IdleState();
+        _perspIdleState = new Persp_IdleState(PerspectiveCam);
         _orthoIdleState = new Ortho_IdleState(_orthoCam);
-        _editPointState = new EditRoomPointsState(_orthoCam);
     }
 
     public void Update()
@@ -53,12 +54,6 @@ public class SubStateManager
         SetSubState(_perspIdleState);
     }
 
-    public void SetEditPointState()
-    {
-        if (_currentSubState == _editPointState) return;
-        SetSubState(_editPointState);
-    }
-
     public void SetDrawRoomState()
     {
         SetSubState(new DrawRoomState(OrthoCamera));
@@ -70,18 +65,32 @@ public class SubStateManager
         if (GameManager.Instance.GetCameraStateManager().GetCurrentState() is OrthographicState)
         {
 #if UNITY_EDITOR
-            ClearConsole();
+            //ClearConsole();
 #endif
             if (gameObject.CompareTag(Constants.TAG_DOOR))
             {
-                SetSubState(new EditOpeningState<Door>(_orthoCam));
+                SetSubState(new EditOpeningState<Door>(_orthoCam, gameObject.GetComponentInParent<Door>()));
                 return;
             }
             else if(gameObject.CompareTag(Constants.TAG_WINDOW))
             {
-                SetSubState(new EditOpeningState<Window>(_orthoCam));
+                SetSubState(new EditOpeningState<Window>(_orthoCam, gameObject.GetComponentInParent<Window>()));
                 return;
             }
+
+            // To Edit Alread placed objects like Chairs/table etcs
+            /*if (gameObject.CompareTag(Constants.TAG_PLACABLES))
+            {
+                SetSubState(new EditObjectState(OrthoCamera, null, gameObject));
+                return;
+            }*/
+
+            // To Edit the position of the room
+            /*if (gameObject.CompareTag(Constants.TAG_ROOM))
+            {
+                SetSubState(new MoveRoomState(gameObject.GetComponent<Room>(), OrthoCamera));
+                return;
+            }*/
 
             if (gameObject.CompareTag(Constants.TAG_GROUND) || gameObject.CompareTag(Constants.TAG_WALL))
             {
@@ -89,7 +98,7 @@ public class SubStateManager
                 {
                     if ((worldPos - wp._position).magnitude <= 5f)
                     {
-                        SetEditPointState();
+                        SetSubState(new EditRoomPointsState(_orthoCam, wp));
                         return;
                     }
                 }
@@ -123,10 +132,16 @@ public class SubStateManager
 #endif
             Debug.Log(gameObject.name);
 
-            if (gameObject.CompareTag(Constants.TAG_DOOR) || gameObject.CompareTag(Constants.TAG_WINDOW))
+            /*// To Edit Alread placed objects like Chairs/ table etcs
+            if(gameObject.CompareTag(Constants.TAG_PLACABLES))
+            {
+                SetSubState(new EditObjectState(null, PerspectiveCam, gameObject));
+            }*/
+
+            /*if (gameObject.CompareTag(Constants.TAG_DOOR) || gameObject.CompareTag(Constants.TAG_WINDOW))
             {
                 SetSubState(new EditOpeningIn3DState(Camera.main));
-            }
+            }*/
         }
     }
         

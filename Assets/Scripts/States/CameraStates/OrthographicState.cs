@@ -15,6 +15,7 @@ public class OrthographicState : CameraState
         RemoveWallMeshes();
         ShowGameobjectsFromOrthoState();
         GameManager.Instance.GetSubStateManager().SetOrthoIdleState();
+        _orthoCam.FitToAllWalls();
 
         Two_D_Settings();
     }
@@ -40,6 +41,7 @@ public class OrthographicState : CameraState
         Camera.main.fieldOfView = 45;
 
         _orthoCam.enabled = true;
+        GameManager.Instance.GetPerspCam().enabled = false;
     }
 
     private void ShowGameobjectsFromOrthoState()
@@ -57,7 +59,7 @@ public class OrthographicState : CameraState
         {
             foreach (Opening opening in OpeningManager.Instance.GetAllOpenings())
             {
-                opening.OpeningVisual.SetActive(true);
+                opening.OpeningVisual.gameObject.SetActive(true);
             }
         }
     }

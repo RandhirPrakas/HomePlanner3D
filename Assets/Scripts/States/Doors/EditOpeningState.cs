@@ -1,14 +1,43 @@
+using System.IO;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class EditOpeningState<T> : ICameraSubState where T : Opening
 {
+    private enum DragMode { None, Moving, ResizingLeft, ResizingRight }
+    private DragMode _currentDragMode = DragMode.None;
+
     private T _selectedOpening;
+
+    private T SelectedOpening
+    {
+        get { return _selectedOpening; }
+        set
+        {
+            if (_selectedOpening == value) return;
+            _selectedOpening = value;
+            OpeningManager.Instance._currentSelectedOpening = value;
+        }
+    }
+
     private OrthoCam _orthoCam;
     private Vector3 _startPosition;
 
-    public EditOpeningState(OrthoCam orthoCam)
+    private Vector3 _dragStartPosition;
+    private float _startOpeningWidth;
+    private Vector3 _startOpeningPosition;
+
+
+    private EditUI _editUI;
+    public EditOpeningState(OrthoCam orthoCam, T opening)
     {
         _orthoCam = orthoCam ?? GameManager.Instance.GetOrthoCamera();
+        if (opening != null)
+        {
+            SelectedOpening = opening;
+            SelectedOpening.OpeningVisual.SetHighlightedColor();
+            SetEditUI();
+        }
     }
 
     public void Enter()
@@ -19,40 +48,168 @@ public class EditOpeningState<T> : ICameraSubState where T : Opening
     public void Exit()
     {
         Debug.Log($"Exited EditOpeningState<{typeof(T).Name}>");
+        if (SelectedOpening != null)
+        {
+            SelectedOpening.OpeningVisual.SetDefaultColor();
+            SelectedOpening = null;
+        }
+        DestroyEditUI();
     }
 
-    public void Update() => _orthoCam.Update();
+    public void Update()
+    {
+        _orthoCam.Update();
 
+        if (Input.GetKeyDown(KeyCode.G))
+        {
+            OpeningManager.Instance.DeleteOpening(_selectedOpening);
+        }
+    }
     public void Init(Vector3 worldPos, Vector2 screenPos) { }
 
     public void OnTouchStart(Vector3 worldPos, Vector2 screenPos)
     {
-        _selectedOpening = GetOpeningUnderTouch(worldPos);
-        if (_selectedOpening != null)
-            _startPosition = _selectedOpening.OpeningPosition;
+        Ray ray = _orthoCam._mainCamera.ScreenPointToRay(screenPos);
+        if (Physics.Raycast(ray, out RaycastHit hit, 1000f))
+        {
+            T opening = hit.collider.GetComponentInParent<T>();
+            if (opening == null)
+            {
+                // Clicked on something else, so deselect
+                if (SelectedOpening != null)
+                {
+                    SelectedOpening.OpeningVisual.SetDefaultColor();
+                    SelectedOpening = null;
+                }
+                return;
+            }
+
+            // We hit an opening or its handle, select it if it's not already
+            if (SelectedOpening != opening)
+            {
+                if (SelectedOpening != null) SelectedOpening.OpeningVisual.SetDefaultColor();
+                SelectedOpening = opening;
+                SelectedOpening.OpeningVisual.SetHighlightedColor();
+                SetEditUI();
+            }
+
+            _dragStartPosition = worldPos;
+            _startOpeningPosition = SelectedOpening.transform.position;
+            _startOpeningWidth = SelectedOpening.Width;
+
+            // Determine drag mode based on the collider's name
+            switch (hit.collider.gameObject.name)
+            {
+                case "LeftHandle":
+                    _currentDragMode = DragMode.ResizingLeft;
+                    break;
+                case "RightHandle":
+                    _currentDragMode = DragMode.ResizingRight;
+                    break;
+                default:
+                    _currentDragMode = DragMode.Moving;
+                    _startPosition = SelectedOpening.OpeningPosition; // For move reversion
+                    break;
+            }
+        }
     }
 
     public void OnTouchHold(Vector3 worldPos, Vector2 screenPos)
     {
-        if (_selectedOpening != null)
-            MoveOpening(_selectedOpening, worldPos);
+        if (_selectedOpening == null) return;
+
+        switch (_currentDragMode)
+        {
+            case DragMode.Moving:
+                MoveOpening(_selectedOpening, worldPos);
+                break;
+            case DragMode.ResizingLeft:
+            case DragMode.ResizingRight:
+                ResizeOpening(worldPos);
+                break;
+        }
     }
 
     public void OnTouchEnd(Vector3 worldPos, Vector2 screenPos)
     {
         if (_selectedOpening == null) return;
 
-        Wall nearest = FindNearestWall(worldPos, out Vector3 proj);
-        proj.y = 3f;
-
-        if (!AppHelper.CanPlaceOpening<T>(nearest, proj))
+        if (_currentDragMode == DragMode.Moving)
         {
-            Debug.Log($"{typeof(T).Name} placement invalid, reverting.");
-            MoveOpening(_selectedOpening, _startPosition);
+            Wall nearest = FindNearestWall(worldPos, out Vector3 proj);
+            proj.y = 3f;
+
+            if (!AppHelper.CanPlaceOpening<T>(nearest, proj, _selectedOpening))
+            {
+                Debug.Log($"{typeof(T).Name} placement invalid, reverting.");
+                MoveOpening(_selectedOpening, _startPosition);
+            }
         }
 
-        _selectedOpening = null;
+        _currentDragMode = DragMode.None;
     }
+
+
+    // In EditOpeningState.cs
+
+    private void ResizeOpening(Vector3 currentWorldPos)
+    {
+        if (SelectedOpening == null || SelectedOpening.OpeningVisual._leftTransform == null || SelectedOpening.OpeningVisual._rightTransform == null) return;
+
+        Vector3 widthDirection = (SelectedOpening.OpeningVisual._rightTransform.position - SelectedOpening.OpeningVisual._leftTransform.position).normalized;
+
+        Wall nearestWall = FindNearestWall(currentWorldPos, out Vector3 projectedPos);
+        if (nearestWall == null) return;
+
+        Transform parentTransform = SelectedOpening.transform.parent;
+        float scaleCorrection = 1.0f;
+        if (parentTransform != null && parentTransform.lossyScale.x != 0)
+        {
+            scaleCorrection = 1.0f / parentTransform.lossyScale.x;
+        }
+
+        Vector3 dragVector = projectedPos - _dragStartPosition;
+        float dragDelta = Vector3.Dot(dragVector, widthDirection) * scaleCorrection;
+
+
+        float minWidth = AppHelper._doorWidth;
+
+        if (_currentDragMode == DragMode.ResizingRight)
+        {
+            float maxNegativeDrag = minWidth - _startOpeningWidth;
+            if (dragDelta < maxNegativeDrag)
+            {
+                dragDelta = maxNegativeDrag;
+            }
+        }
+        else 
+        {
+            float maxPositiveDrag = _startOpeningWidth - minWidth;
+            if (dragDelta > maxPositiveDrag)
+            {
+                dragDelta = maxPositiveDrag;
+            }
+        }
+
+        float newWidth;
+        float positionOffset;
+
+        if (_currentDragMode == DragMode.ResizingRight)
+        {
+            newWidth = _startOpeningWidth + dragDelta;
+            positionOffset = dragDelta / 2.0f;
+        }
+        else
+        {
+            newWidth = _startOpeningWidth - dragDelta;
+            positionOffset = dragDelta / 2.0f;
+        }
+
+        SelectedOpening.Width = newWidth;
+        SelectedOpening.transform.position = _startOpeningPosition + widthDirection * (positionOffset * scaleCorrection);
+        SelectedOpening.OpeningPosition = SelectedOpening.ParentWall.transform.InverseTransformPoint(SelectedOpening.transform.position);
+    }
+
 
     private T GetOpeningUnderTouch(Vector3 pos)
     {
@@ -74,6 +231,10 @@ public class EditOpeningState<T> : ICameraSubState where T : Opening
                 }
             }
         }
+        if (nearest != SelectedOpening && SelectedOpening != null)
+        {
+            SelectedOpening.OpeningVisual.SetDefaultColor();
+        }
         return nearest;
     }
 
@@ -82,7 +243,6 @@ public class EditOpeningState<T> : ICameraSubState where T : Opening
         Wall nearest = FindNearestWall(worldPos, out Vector3 proj);
         if (nearest == null) return;
 
-        // re-parent if wall changed
         if (opening.ParentWall != nearest)
         {
             Wall oldWall = opening.ParentWall;
@@ -146,4 +306,42 @@ public class EditOpeningState<T> : ICameraSubState where T : Opening
     }
 
     public void OnPinch(float delta) => _orthoCam.ZoomCamera(delta);
+
+
+    private void SetEditUI()
+    {
+        if (SelectedOpening == null) return;
+
+        Vector3 yOffset = Vector3.up * 1f;
+        Vector3 zOffset = Vector3.forward * 3f;
+
+        Vector3 position = SelectedOpening.OpeningPosition + yOffset + zOffset;
+
+        if (_editUI == null)
+        {
+            // Instantiate and parent under the wall point
+            _editUI = GameObject.Instantiate(
+                GameManager.Instance._uiManager._editUIPrefab,
+                position,
+                Quaternion.identity,
+                SelectedOpening.transform
+            );
+            _editUI.gameObject.name = "EditUI";
+        }
+        else
+        {
+            _editUI.transform.SetParent(SelectedOpening.transform, false);
+            _editUI.transform.position = position;
+        }
+
+        _editUI.Initialize(EditUIType.OpeningEdit);
+    }
+
+    private void DestroyEditUI()
+    {
+        if (_editUI != null)
+        {
+            GameObject.Destroy(_editUI.gameObject);
+        }
+    }
 }

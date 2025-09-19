@@ -20,7 +20,6 @@ public class Window : Opening
         if (!wall._allOpenings.Contains(this))
             wall._allOpenings.Add(this);
 
-        ConnectedWall.Add(wall);
         OpeningManager.Instance.AddOpening(this);
     }
 }
