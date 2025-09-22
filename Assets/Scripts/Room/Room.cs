@@ -6,13 +6,16 @@ public class Room : MonoBehaviour
     public List<WallPoint> _roomWallPoints = new List<WallPoint>();
     public List<Wall> _roomWalls = new List<Wall>();
 
-    private List<Vector3> _wallPointsPositions = new List<Vector3>();
+    [SerializeField] private List<Vector3> _wallPointsPositions = new List<Vector3>();
     private MeshFilter _meshFilter;
     private MeshRenderer _meshRenderer;
+    private MeshCollider _meshCollider;
     private QuadGenerator _quadGenerator;
 
     [SerializeField] private float _area;
     [SerializeField] private Vector3 _centroid;
+
+    public MeshCollider MeshCollider { get => _meshCollider; set => _meshCollider = value; }
 
     public void Initialize(List<WallPoint> points)
     {
@@ -54,8 +57,15 @@ public class Room : MonoBehaviour
 
         if (generatedMesh != null)
         {
-            this.gameObject.AddComponent<MeshCollider>();
+            MeshCollider = this.gameObject.AddComponent<MeshCollider>();
         }
+    }
+
+    public void UpdateCollider()
+    {
+        _meshCollider.sharedMesh = null;
+        _meshCollider.sharedMesh = _meshFilter.mesh;
+        _meshCollider.enabled = true;
     }
 
     private void AddMeshComponent()

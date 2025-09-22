@@ -11,8 +11,9 @@ public class Door : Opening
         _parentWall = wall;
         OpeningType = OpeningType.Door;
 
-        OpeningPosition = wall.transform.InverseTransformPoint(worldPosition);
-        OpeningPosition = new Vector3(OpeningPosition.x, 3f, OpeningPosition.z);
+        CalculateAndSetNormalizedPosition(worldPosition);
+        UpdatePositionAndRotation();
+
 
         transform.SetParent(wall.transform, worldPositionStays: true);
 

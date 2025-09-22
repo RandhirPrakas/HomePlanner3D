@@ -121,7 +121,7 @@ public class EditRoomPointsState : ICameraSubState
         }
     }
 
-    public void OnTouchEnd(Vector3 worldPos, Vector2 screenPos)
+    /*public void OnTouchEnd(Vector3 worldPos, Vector2 screenPos)
     {
         if (_selectedPoint == null) return;
 
@@ -169,7 +169,41 @@ public class EditRoomPointsState : ICameraSubState
 
         AppEventHandler.InvokeOnWallCreation();
     }
+*/
 
+    public void OnTouchEnd(Vector3 worldPos, Vector2 screenPos)
+    {
+        if (_selectedPoint == null) return;
+
+        Vector3 snappedPos = AppHelper.SmartSnapToAxis(worldPos, WallPointManager.Instance._allWallPoints);
+        snappedPos.y = AppHelper._lrYPos; // Directly set the Y position
+
+        // Check if we should merge with another point
+        WallPoint targetPointToMerge = WallPointManager.Instance.GetExistingPointAt(snappedPos, _selectedPoint);
+        if (targetPointToMerge != null)
+        {
+            Debug.Log("Action: Merging with existing point.");
+            _selectedPoint.MergeWith(targetPointToMerge);
+            SelectedPoint = null;
+            AppEventHandler.InvokeOnWallCreation();
+            return;
+        }
+
+        _selectedPoint.SetPosition(snappedPos);
+
+        foreach (Wall wall in _selectedPoint.GetConnectedWalls())
+        {
+            wall.UpdateFromPoints(true);
+        }
+        // ------------------------------------
+
+        if (_selectedPoint._activeSphere != null)
+        {
+            _selectedPoint._activeSphere.GetComponent<MeshRenderer>().material.color = Color.yellow;
+        }
+
+        AppEventHandler.InvokeOnWallCreation();
+    }
     private WallPoint GetPointUnderTouch(Vector3 position)
     {
         WallPoint closestPoint = null;

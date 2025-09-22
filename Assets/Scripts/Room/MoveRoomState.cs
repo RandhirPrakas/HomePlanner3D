@@ -4,6 +4,21 @@ using UnityEngine;
 public class MoveRoomState : ICameraSubState
 {
     private Room _activeRoom;
+
+    private Room ActiveRoom
+    {
+        get => _activeRoom;
+        set
+        {
+            if (_activeRoom != value)
+            {
+                _activeRoom = value;
+                RoomManager.Instance.SetActiveRoom(value);
+            }
+        }
+    }
+
+
     private Vector3 _lastMousePosition;
     private bool _isDragging = false;
 
@@ -19,15 +34,15 @@ public class MoveRoomState : ICameraSubState
 
     public void SetActiveRoom(Room room)
     {
-        _activeRoom = room;
+        ActiveRoom = room;
 
         _originalPositions.Clear();
-        foreach (WallPoint wp in _activeRoom._roomWallPoints)
+        foreach (WallPoint wp in ActiveRoom._roomWallPoints)
         {
             _originalPositions[wp] = wp._position;
         }
 
-        Debug.Log($"Active room: {_activeRoom.name}");
+        Debug.Log($"Active room: {ActiveRoom.name}");
     }
 
     public void Enter()
@@ -37,7 +52,7 @@ public class MoveRoomState : ICameraSubState
 
     public void Exit()
     {
-        _activeRoom = null;
+        ActiveRoom = null;
         _originalPositions.Clear();
         _isDragging = false;
     }
@@ -46,10 +61,13 @@ public class MoveRoomState : ICameraSubState
 
     public void OnTouchStart(Vector3 worldPos, Vector2 screenPos)
     {
-        if (_activeRoom == null) return;
+        if (ActiveRoom == null) return;
 
         _lastMousePosition = worldPos;
         _isDragging = true;
+
+
+        ActiveRoom.MeshCollider.enabled = false;
     }
 
     /*public void OnTouchHold(Vector3 worldPos, Vector2 screenPos)
@@ -87,13 +105,13 @@ public class MoveRoomState : ICameraSubState
     // In MoveRoomState.cs
     public void OnTouchHold(Vector3 worldPos, Vector2 screenPos)
     {
-        if (!_isDragging || _activeRoom == null) return;
+        if (!_isDragging || ActiveRoom == null) return;
 
         Vector3 delta = worldPos - _lastMousePosition;
         delta.y = 0;
 
         // 1. Move all points that belong to the active room.
-        foreach (WallPoint wp in _activeRoom._roomWallPoints)
+        foreach (WallPoint wp in ActiveRoom._roomWallPoints)
         {
             wp.SetPosition(wp._position + delta);
         }
@@ -101,7 +119,7 @@ public class MoveRoomState : ICameraSubState
         // 2. Collect all unique walls that are connected to the moved points.
         //    Using a HashSet prevents us from updating the same wall multiple times.
         HashSet<Wall> wallsToUpdate = new HashSet<Wall>();
-        foreach (WallPoint wp in _activeRoom._roomWallPoints)
+        foreach (WallPoint wp in ActiveRoom._roomWallPoints)
         {
             foreach (Wall wall in wp.GetConnectedWalls())
             {
@@ -110,7 +128,7 @@ public class MoveRoomState : ICameraSubState
         }
 
         // 3. Update the room's floor mesh and every affected wall.
-        _activeRoom.UpdateFloor();
+        ActiveRoom.UpdateFloor();
         foreach (Wall wall in wallsToUpdate)
         {
             wall.UpdateFromPoints();
@@ -122,7 +140,12 @@ public class MoveRoomState : ICameraSubState
     public void OnTouchEnd(Vector3 worldPos, Vector2 screenPos)
     {
         _isDragging = false;
-        _activeRoom = null;
+
+        if (ActiveRoom != null)
+        {
+            ActiveRoom.UpdateCollider();
+        }
+
         _originalPositions.Clear();
     }
 

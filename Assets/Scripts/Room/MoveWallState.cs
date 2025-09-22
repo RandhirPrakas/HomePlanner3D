@@ -38,11 +38,11 @@ public class MoveWallState : ICameraSubState
 
         if (wall != null) ActiveWall = wall;
 
-        if (GameManager.Instance != null) GameManager.Instance._activeWall = _activeWall;
+        if (GameManager.Instance != null) GameManager.Instance._activeWall = ActiveWall;
 
         // NOTE: This assumes WallPoint and Wall have public properties.
         // If not, revert to GetEndPosition() / GetStartPosition().
-        Vector3 wallVector = _activeWall.EndWallPoint.transform.position - _activeWall.StartWallPoint.transform.position;
+        Vector3 wallVector = _activeWall.EndWallPoint.transform.position - ActiveWall.StartWallPoint.transform.position;
         _direction = new Vector3(-wallVector.z, 0, wallVector.x).normalized;
 
         // This line can cause errors if the material path is wrong or in builds.
@@ -50,7 +50,7 @@ public class MoveWallState : ICameraSubState
         _defaultColor = Resources.Load<Material>("ProceduralMaterials/DefaultLRmaterial").color;
 
         if (canChangeColor)
-            _activeWall.GetComponent<LineRenderer>().material.color = Color.blue;
+            ActiveWall.GetComponent<LineRenderer>().material.color = Color.blue;
 
         SetEditUI();
     }
@@ -73,9 +73,9 @@ public class MoveWallState : ICameraSubState
     {
         if (Input.GetKeyDown(KeyCode.F))
         {
-            if (_activeWall != null)
+            if (ActiveWall != null)
             {
-                WallManager.Instance.DeleteWall(_activeWall);
+                WallManager.Instance.DeleteWall(ActiveWall);
                 // After deletion, this state is invalid and should be exited.
                 // You might need to add state transition logic here.
             }
@@ -87,7 +87,7 @@ public class MoveWallState : ICameraSubState
     public void OnTouchStart(Vector3 worldPos, Vector2 screenPos)
     {
         SetActiveWall(GetActiveWall(screenPos));
-        if (_activeWall != null)
+        if (ActiveWall != null)
         {
             _lastWallPosition = worldPos;
             _isDragging = true;
@@ -96,7 +96,7 @@ public class MoveWallState : ICameraSubState
 
     public void OnTouchHold(Vector3 worldPos, Vector2 screenPos)
     {
-        if (!_isDragging || _activeWall == null) return;
+        if (!_isDragging || ActiveWall == null) return;
 
         worldPos.y = 0;
         Vector3 delta = worldPos - _lastWallPosition;
@@ -117,6 +117,7 @@ public class MoveWallState : ICameraSubState
         {
             ActiveWall.GetComponent<LineRenderer>().material.color = _defaultColor;
             HandleSnappingOnMoveEnd();
+            UpdateRoomColliders();
         }
     }
 
@@ -145,11 +146,11 @@ public class MoveWallState : ICameraSubState
         _roomsToUpdate.Clear();
         _wallsToUpdate.Clear();
 
-        _activeWall.StartWallPoint.SetPosition(_activeWall.StartWallPoint._position + positionOffset);
-        _activeWall.EndWallPoint.SetPosition(_activeWall.EndWallPoint._position + positionOffset);
+        ActiveWall.StartWallPoint.SetPosition(ActiveWall.StartWallPoint._position + positionOffset);
+        ActiveWall.EndWallPoint.SetPosition(ActiveWall.EndWallPoint._position + positionOffset);
 
        
-        var pointsToCheck = new List<WallPoint> { _activeWall.StartWallPoint, _activeWall.EndWallPoint };
+        var pointsToCheck = new List<WallPoint> { ActiveWall.StartWallPoint, ActiveWall.EndWallPoint };
         foreach (var point in pointsToCheck)
         {
             foreach (var wall in point.GetConnectedWalls())
@@ -161,7 +162,6 @@ public class MoveWallState : ICameraSubState
                 }
             }
         }
-
         
         foreach (var wall in _wallsToUpdate)
         {
@@ -186,13 +186,13 @@ public class MoveWallState : ICameraSubState
             {
                 // GetComponentInParent is safer if the collider is on a child object.
                 Wall wall = hit.collider.GetComponentInParent<Wall>();
-                if (wall != null && wall != _activeWall)
+                if (wall != null && wall != ActiveWall)
                 {
                     return wall;
                 }
             }
         }
-        return _activeWall; // Return the current active wall if nothing new is hit
+        return ActiveWall; // Return the current active wall if nothing new is hit
     }
 
     private void SetEditUI()
@@ -240,18 +240,14 @@ public class MoveWallState : ICameraSubState
         WallPoint startPoint = ActiveWall.StartWallPoint;
         WallPoint endPoint = ActiveWall.EndWallPoint;
 
-        // 1. Find the nearest potential snap target for EACH endpoint of the wall.
-        // We pass the point itself to exclude it from the search.
         WallPoint startSnapTarget = WallPointManager.Instance.GetExistingPointAt(startPoint._position, startPoint);
         WallPoint endSnapTarget = WallPointManager.Instance.GetExistingPointAt(endPoint._position, endPoint);
 
-        // If neither end has a valid target, there's nothing to do.
         if (startSnapTarget == null && endSnapTarget == null)
         {
             return;
         }
 
-        // 2. Determine which endpoint is closer to its respective snap target.
         float startSnapDistance = (startSnapTarget != null)
             ? Vector3.Distance(startPoint._position, startSnapTarget._position)
             : float.MaxValue;
@@ -266,39 +262,37 @@ public class MoveWallState : ICameraSubState
 
         if (startSnapDistance <= endSnapDistance)
         {
-            // The start point is closer to its target, so it will be the one to snap.
             pointToSnap = startPoint;
             pointToShift = endPoint;
             snapTarget = startSnapTarget;
         }
         else
         {
-            // The end point is closer to its target.
             pointToSnap = endPoint;
             pointToShift = startPoint;
             snapTarget = endSnapTarget;
         }
 
-        // 3. Calculate the vector needed to move the snapping point to its target.
         Vector3 snapVector = snapTarget._position - pointToSnap._position;
 
-        // 4. Apply the transformations.
-        // IMPORTANT: Shift the second point FIRST, before merging the snapping point.
-        // Merging destroys the 'pointToSnap' object, so we need its position data before it's gone.
         pointToShift.SetPosition(pointToShift._position + snapVector);
 
-        // Now, merge the primary point with its target.
         pointToSnap.MergeWith(snapTarget);
 
-        // 5. Explicitly update all walls connected to the shifted point to redraw them.
-        // (The MergeWith function already handles updates for its connected walls).
         foreach (var wall in pointToShift.GetConnectedWalls())
         {
             wall.UpdateFromPoints();
         }
 
-        // After the merge, the ActiveWall reference might be connected to a new point.
-        // To be safe, we can nullify it so the state doesn't hold a stale reference.
         ActiveWall = null;
     }
+
+    private void UpdateRoomColliders()
+    {
+        foreach(Room room in _roomsToUpdate)
+        {
+            room.UpdateCollider();
+        }
+    }
+
 }

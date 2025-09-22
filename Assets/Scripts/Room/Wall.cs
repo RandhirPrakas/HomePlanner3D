@@ -106,6 +106,11 @@ public class Wall : MonoBehaviour
             UpdateCollider(start, end);
             UpdateRoom();
 
+            foreach(Opening opening in _allOpenings)
+            {
+                opening.UpdatePositionAndRotation();
+            }
+
             if (!isUpdatingPoint)
                 UpdateConenctedWalls();
         }
@@ -235,9 +240,6 @@ public class Wall : MonoBehaviour
         Destroy(gameObject);
     }
 
-    // In Wall.cs
-
-    // New lightweight method for dragging
     public void UpdateVisualsOnly()
     {
         if (_startWallPoint == null || _endWallPoint == null || _lineRenderer == null)
