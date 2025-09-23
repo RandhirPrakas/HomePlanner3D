@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading.Tasks.Sources;
 using UnityEngine;
 
 public class EditObjectState : ICameraSubState
@@ -7,7 +8,7 @@ public class EditObjectState : ICameraSubState
     private readonly OrthoCam _orthoCam;
     private readonly PerspCam _perspCam;
 
-    private readonly GameObject _selectedObject;
+    private GameObject _selectedObject;
     private readonly PlaceableObject _placeableData;
     private readonly Collider _objectCollider;
 
@@ -19,6 +20,13 @@ public class EditObjectState : ICameraSubState
     private readonly Material _invalidPlacementMaterial;
     private readonly Dictionary<Renderer, Material[]> _originalMaterials = new Dictionary<Renderer, Material[]>();
 
+    public GameObject SelectedObject { get => _selectedObject;
+        set{
+            if (SelectedObject == value) return;
+            _selectedObject = value;
+        }
+    }
+
     /// <summary>
     /// A single constructor that can accept either camera type.
     /// Pass 'null' for the camera you are not using.
@@ -28,9 +36,9 @@ public class EditObjectState : ICameraSubState
         _orthoCam = orthoCam;
         _perspCam = perspCam;
 
-        _selectedObject = objectToEdit;
-        _placeableData = _selectedObject.GetComponent<PlaceableObject>();
-        _objectCollider = _selectedObject.GetComponent<Collider>();
+        SelectedObject= objectToEdit;
+        _placeableData = SelectedObject.GetComponent<PlaceableObject>();
+        _objectCollider = SelectedObject.GetComponent<Collider>();
 
         _validPlacementMaterial = Resources.Load<Material>("ProceduralMaterials/ValidPlacement");
         _invalidPlacementMaterial = Resources.Load<Material>("ProceduralMaterials/InvalidPlacement");
@@ -38,13 +46,15 @@ public class EditObjectState : ICameraSubState
 
     public void Enter()
     {
-        _originalPosition = _selectedObject.transform.position;
-        _originalRotation = _selectedObject.transform.rotation;
+        _originalPosition = SelectedObject.transform.position;
+        _originalRotation = SelectedObject.transform.rotation;
 
         if (_objectCollider != null) _objectCollider.enabled = false;
 
         CacheOriginalMaterials();
         SetFeedbackMaterial(_invalidPlacementMaterial);
+
+        Debug.Log("Entered Edit Object State");
     }
 
     public void Exit()
@@ -69,11 +79,10 @@ public class EditObjectState : ICameraSubState
 
         if (!_isPlacementValid)
         {
-            _selectedObject.transform.SetPositionAndRotation(_originalPosition, _originalRotation);
+            SelectedObject.transform.SetPositionAndRotation(_originalPosition, _originalRotation);
         }
 
-        // --- Return to the correct idle state ---
-        // We check which camera is active to decide which idle state to create.
+        // Return to the correct idle state
         if (_orthoCam != null)
         {
             GameManager.Instance.GetSubStateManager().SetSubState(new Ortho_IdleState(_orthoCam));
@@ -95,6 +104,18 @@ public class EditObjectState : ICameraSubState
         {
             _perspCam.UpdateCamera();
         }
+
+        if(Input.GetKeyDown(KeyCode.UpArrow))
+        {
+            // Increase Size
+            IncreaseSize();
+        }
+        else if(Input.GetKeyDown(KeyCode.DownArrow))
+        {
+            // Decrease Size
+            DecreaseSize();
+        }
+
     }
 
     public void OnPinch(float delta)
@@ -119,24 +140,24 @@ public class EditObjectState : ICameraSubState
         {
             if (_placeableData.Type == PlaceableObject.PlacementType.Ground && hit.collider.CompareTag("Room"))
             {
-                _selectedObject.transform.position = hit.point + new Vector3(0, _placeableData.GroundOffset, 0);
-                _selectedObject.transform.rotation = Quaternion.identity;
+                SelectedObject.transform.position = hit.point + new Vector3(0, _placeableData.GroundOffset, 0);
+                SelectedObject.transform.rotation = Quaternion.identity;
                 foundValidSurface = true;
             }
             else if (_placeableData.Type == PlaceableObject.PlacementType.Wall && hit.collider.CompareTag("Wall"))
             {
-                _selectedObject.transform.position = hit.point;
-                _selectedObject.transform.rotation = Quaternion.LookRotation(-hit.normal);
+                SelectedObject.transform.position = hit.point;
+                SelectedObject.transform.rotation = Quaternion.LookRotation(-hit.normal);
                 foundValidSurface = true;
             }
         }
 
         if (!foundValidSurface)
         {
-            var plane = new Plane(Vector3.up, _selectedObject.transform.position);
+            var plane = new Plane(Vector3.up, SelectedObject.transform.position);
             if (plane.Raycast(ray, out float enter))
             {
-                _selectedObject.transform.position = ray.GetPoint(enter);
+                SelectedObject.transform.position = ray.GetPoint(enter);
             }
         }
 
@@ -156,7 +177,7 @@ public class EditObjectState : ICameraSubState
     private void CacheOriginalMaterials()
     {
         _originalMaterials.Clear();
-        foreach (var renderer in _selectedObject.GetComponentsInChildren<Renderer>(true))
+        foreach (var renderer in SelectedObject.GetComponentsInChildren<Renderer>(true))
         {
             _originalMaterials[renderer] = renderer.materials;
         }
@@ -183,4 +204,27 @@ public class EditObjectState : ICameraSubState
     #endregion
 
     public void Init(Vector3 worldPos, Vector2 screenPos) { }
+
+    private void GroundObject()
+    {
+        if (SelectedObject== null)
+            return;
+        SelectedObject.transform.position = new Vector3(SelectedObject.transform.position.x, SelectedObject.transform.localScale.y/2, SelectedObject.transform.position.z);
+    }
+
+    private void IncreaseSize()
+    {
+        if (SelectedObject == null)
+            return;
+        SelectedObject.transform.localScale += SelectedObject.transform.localScale * 0.5f;
+        GroundObject();
+    }
+
+    private void DecreaseSize()
+    {
+        if (SelectedObject == null)
+            return;
+        SelectedObject.transform.localScale -= SelectedObject.transform.localScale * 0.5f;
+        GroundObject();
+    }
 }

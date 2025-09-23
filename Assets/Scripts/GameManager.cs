@@ -41,6 +41,15 @@ public class GameManager : MonoBehaviour
 
     #endregion
 
+    #region For Time Being
+
+    public bool _perspCamActive = false;
+    public bool _placeObjects = false;
+    public bool _roomMovement = false;
+    public bool _window = false;
+    public bool _editOpening = false;
+
+    #endregion
     private void Awake()
     {
         // Creating Singleton

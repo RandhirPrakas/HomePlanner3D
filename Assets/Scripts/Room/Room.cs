@@ -74,53 +74,36 @@ public class Room : MonoBehaviour
         _meshRenderer = gameObject.AddComponent<MeshRenderer>();
     }
 
-    /*private void SetWallPointPositions()
-    {
-        _wallPointsPositions.Clear();
-        foreach (var wp in _roomWallPoints)
-        {
-            _wallPointsPositions.Add(wp._position);
-            wp.AddConnectedRoom(this);
-        }
-    }*/
-
-    // In Room.cs
+   
 
     private void SetWallPointPositions()
     {
-        // We must have at least 3 points to form a room.
         if (_roomWallPoints == null || _roomWallPoints.Count < 3)
         {
             _wallPointsPositions.Clear();
             return;
         }
 
-        // This new list will hold the points in their correct connected order.
         List<WallPoint> sortedPoints = new List<WallPoint>();
 
-        // Start with the first point in the list.
         WallPoint currentPoint = _roomWallPoints[0];
-        WallPoint lastPoint = null; // Used to prevent immediately going backward.
+        WallPoint lastPoint = null;
 
-        // Loop through all points by following their connections.
         for (int i = 0; i < _roomWallPoints.Count; i++)
         {
             sortedPoints.Add(currentPoint);
 
             WallPoint nextPoint = null;
-            // Find the next point in the chain that is part of this room.
+
             foreach (WallPoint neighbor in currentPoint.GetConnectedWallPoints())
             {
-                // Make sure the neighbor is part of this room and is not the point we just came from.
                 if (neighbor != lastPoint && _roomWallPoints.Contains(neighbor))
                 {
-                    // This is our next point in the perimeter.
                     nextPoint = neighbor;
                     break;
                 }
             }
 
-            // If we found a next point, continue the chain.
             if (nextPoint != null)
             {
                 lastPoint = currentPoint;
@@ -134,10 +117,8 @@ public class Room : MonoBehaviour
             }
         }
 
-        // Update the main list with the correctly ordered points.
         _roomWallPoints = sortedPoints;
 
-        // Finally, create the list of vector positions for the mesh generator.
         _wallPointsPositions.Clear();
         foreach (var wp in _roomWallPoints)
         {

@@ -50,6 +50,11 @@ public class Ortho_IdleState : ICameraSubState
 
     public void Update()
     {
+        if(Input.GetKeyDown(KeyCode.P))
+        {
+            GameManager.Instance.GetSubStateManager().SetSubState(new PlaceObjectState(_orthoCam));
+            return;
+        }
         _orthoCam.Update();
     }
 }

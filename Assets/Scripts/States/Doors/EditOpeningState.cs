@@ -150,8 +150,6 @@ public class EditOpeningState<T> : ICameraSubState where T : Opening
     }
 
 
-    // In EditOpeningState.cs
-
     private void ResizeOpening(Vector3 currentWorldPos)
     {
         if (SelectedOpening == null || SelectedOpening.OpeningVisual._leftTransform == null || SelectedOpening.OpeningVisual._rightTransform == null) return;

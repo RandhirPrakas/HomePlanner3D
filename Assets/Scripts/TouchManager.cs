@@ -24,7 +24,7 @@ public class TouchManager : MonoBehaviour
         float scroll = Input.GetAxis("Mouse ScrollWheel");
         if (Mathf.Abs(scroll) > 0.01f)
         {
-            currentSubState.OnPinch(scroll * 100f); // scale for editor testing
+            currentSubState.OnPinch(scroll * 100f);
         }
 
         // --- Mouse drag handling ---

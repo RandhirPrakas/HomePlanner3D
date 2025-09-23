@@ -61,36 +61,37 @@ public class SubStateManager
 
     private void SwitchSubstate(GameObject gameObject, Vector3 worldPos, Vector2 screenPos)
     {
+        Debug.Log($"Tapped On {gameObject.name}");
         if (Time.time < _inputBlockTime) return;
         if (GameManager.Instance.GetCameraStateManager().GetCurrentState() is OrthographicState)
         {
 #if UNITY_EDITOR
             //ClearConsole();
 #endif
-            if (gameObject.CompareTag(Constants.TAG_DOOR))
+            if (gameObject.CompareTag(Constants.TAG_DOOR) && GameManager.Instance._editOpening)
             {
                 SetSubState(new EditOpeningState<Door>(_orthoCam, gameObject.GetComponentInParent<Door>()));
                 return;
             }
-            else if(gameObject.CompareTag(Constants.TAG_WINDOW))
+            else if(gameObject.CompareTag(Constants.TAG_WINDOW) && GameManager.Instance._editOpening)
             {
                 SetSubState(new EditOpeningState<Window>(_orthoCam, gameObject.GetComponentInParent<Window>()));
                 return;
             }
 
             // To Edit Alread placed objects like Chairs/table etcs
-            /*if (gameObject.CompareTag(Constants.TAG_PLACABLES))
+            if (gameObject.CompareTag(Constants.TAG_PLACABLES) && GameManager.Instance._placeObjects)
             {
                 SetSubState(new EditObjectState(OrthoCamera, null, gameObject));
                 return;
-            }*/
+            }
 
             // To Edit the position of the room
-            /*if (gameObject.CompareTag(Constants.TAG_ROOM))
+            if (gameObject.CompareTag(Constants.TAG_ROOM) && GameManager.Instance._roomMovement)
             {
                 SetSubState(new MoveRoomState(gameObject.GetComponent<Room>(), OrthoCamera));
                 return;
-            }*/
+            }
 
             if (gameObject.CompareTag(Constants.TAG_GROUND) || gameObject.CompareTag(Constants.TAG_WALL))
             {
@@ -132,16 +133,16 @@ public class SubStateManager
 #endif
             Debug.Log(gameObject.name);
 
-            /*// To Edit Alread placed objects like Chairs/ table etcs
-            if(gameObject.CompareTag(Constants.TAG_PLACABLES))
+            // To Edit Alread placed objects like Chairs/ table etcs
+            if (gameObject.CompareTag(Constants.TAG_PLACABLES) && GameManager.Instance._placeObjects)
             {
                 SetSubState(new EditObjectState(null, PerspectiveCam, gameObject));
-            }*/
+            }
 
-            /*if (gameObject.CompareTag(Constants.TAG_DOOR) || gameObject.CompareTag(Constants.TAG_WINDOW))
+            if (gameObject.CompareTag(Constants.TAG_DOOR) || gameObject.CompareTag(Constants.TAG_WINDOW) && GameManager.Instance._editOpening)
             {
                 SetSubState(new EditOpeningIn3DState(Camera.main));
-            }*/
+            }
         }
     }
         

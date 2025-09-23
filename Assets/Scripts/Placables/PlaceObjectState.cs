@@ -33,27 +33,24 @@ public class PlaceObjectState : ICameraSubState
         _invalidPlacementMaterial = Resources.Load<Material>("ProceduralMaterials/InvalidPlacement");
     }
 
+
     public void Enter()
     {
         Debug.Log("Entered PlaceObject State");
         if (_placeableData == null)
         {
             Debug.LogError($"The prefab '{_prefabToPlace.name}' is missing the PlaceableObject component!");
-            // Optionally, transition back to idle state here
             return;
         }
 
-        // Create a placeholder instance to move around
         _placeholderInstance = GameObject.Instantiate(_prefabToPlace);
         _placeholderInstance.name = "Placement_Placeholder";
 
-        // Disable colliders on the placeholder to prevent raycast interference
         foreach (var col in _placeholderInstance.GetComponentsInChildren<Collider>())
         {
             col.enabled = false;
         }
 
-        // Store renderers for changing material
         _placeholderRenderers = _placeholderInstance.GetComponentsInChildren<Renderer>();
         SetPlaceholderMaterial(_invalidPlacementMaterial);
         _isPlacementValid = false;
@@ -62,7 +59,6 @@ public class PlaceObjectState : ICameraSubState
     public void Exit()
     {
         Debug.Log("Exiting PlaceObject State");
-        // Clean up the placeholder when the state exits
         if (_placeholderInstance != null)
         {
             GameObject.Destroy(_placeholderInstance);
@@ -71,7 +67,6 @@ public class PlaceObjectState : ICameraSubState
 
     public void OnTouchStart(Vector3 worldPos, Vector2 screenPos)
     {
-        // Immediately try to place on touch start
         UpdatePlaceholderPosition(screenPos);
     }
 
@@ -93,10 +88,7 @@ public class PlaceObjectState : ICameraSubState
         {
             Debug.Log("Invalid placement position. Action cancelled.");
         }
-
-        // NOTE: After placement, you will likely want to transition back to the idle state.
-        // This logic should be handled by your main state machine controller.
-        // For example: _orthoCam.ChangeState(new Ortho_IdleState(_orthoCam));
+        GameManager.Instance.GetSubStateManager().SetOrthoIdleState();
     }
 
     public void Update()
