@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -5,26 +6,39 @@ using UnityEngine.UI;
 
 public class UIManager : MonoBehaviour
 {
+    public Canvas _canvas;
+
     [SerializeField] private Button _clearButton;
     [SerializeField] private Button _drawButton;
     [SerializeField] private Button _toggleButton;
     [SerializeField] private Button _addDoorButton;
     [SerializeField] private Button _addWindowButton;
+    [SerializeField] private Button _addModuleButton;
 
     public EditUI _editUIPrefab;
 
+    public GameObject _modelSelectionUI;
+
+
+    #region Model Items
+    public PlacementManager _placementManager;
+    #endregion
+
+
     private void OnEnable()
     {
+        _modelSelectionUI.SetActive(false);
         _toggleButton.onClick.AddListener(() => ToggleCamerStates());
         _clearButton.onClick.AddListener(() => ResetSceneAndCreateNewRoom());
         _drawButton.onClick.AddListener(() => GameManager.Instance.SetSubState(new DrawState(GameManager.Instance.GetOrthoCamera())));
-        _addDoorButton.onClick.AddListener(() => GameManager.Instance.SetSubState(new AddOpeningState<Door>(GameManager.Instance.GetOrthoCamera(), Constants.PATH_DOOR_VISUALIZER)));
+        _addDoorButton.onClick.AddListener(() => GameManager.Instance.SetSubState(new AddOpeningState<Door>(GameManager.Instance.GetOrthoCamera(), Constants.DOOR_VISUALIZER)));
 
-        if(GameManager.Instance != null && GameManager.Instance._window)
+        if (GameManager.Instance != null && GameManager.Instance._window)
         {
             _addWindowButton.gameObject.SetActive(true);
         }
-        _addWindowButton.onClick.AddListener(() => GameManager.Instance.SetSubState(new AddOpeningState<Window>(GameManager.Instance.GetOrthoCamera(), Constants.PATH_WINDOW_VISUALIZER)));
+        _addWindowButton.onClick.AddListener(() => GameManager.Instance.SetSubState(new AddOpeningState<Window>(GameManager.Instance.GetOrthoCamera(), Constants.WINDOW_VISUALIZER)));
+        _addModuleButton.onClick.AddListener(() => ShowModelSelectionUI());
     }
 
     private void OnDisable()
@@ -34,11 +48,12 @@ public class UIManager : MonoBehaviour
         _addDoorButton.onClick.RemoveAllListeners();
         _toggleButton.onClick.RemoveAllListeners();
         _addWindowButton.onClick.RemoveAllListeners();
+        _addModuleButton.onClick.RemoveAllListeners();
     }
 
     private void ResetSceneAndCreateNewRoom()
     {
-        foreach(WallPoint wp in WallPointManager.Instance._allWallPoints)
+        foreach (WallPoint wp in WallPointManager.Instance._allWallPoints)
         {
             Destroy(wp.gameObject);
         }
@@ -50,7 +65,7 @@ public class UIManager : MonoBehaviour
         }
         OpeningManager.Instance.GetAllOpenings().Clear();
 
-        foreach(Wall wall in WallManager.Instance._allWalls)
+        foreach (Wall wall in WallManager.Instance._allWalls)
         {
             Destroy(wall.gameObject);
         }
@@ -59,7 +74,6 @@ public class UIManager : MonoBehaviour
         foreach (Room room in RoomManager.Instance._allRooms)
         {
             room.RemoveRoom();
-            //Destroy(room.gameObject);
         }
         RoomManager.Instance._allRooms.Clear();
         GameManager.Instance.GetSubStateManager().SetOrthoIdleState();
@@ -86,4 +100,17 @@ public class UIManager : MonoBehaviour
     {
         GameManager.Instance.GetCameraStateManager().ToggleCamera();
     }
+
+    private void ShowModelSelectionUI()
+    {
+        GameManager.Instance.GetSubStateManager().SetOrthoIdleState();
+        _modelSelectionUI.SetActive(true);
+    }
+
+    public void HideModelSelectionUI()
+    {
+        _modelSelectionUI.SetActive(false);
+        GameManager.Instance.GetSubStateManager().SetOrthoIdleState();
+    }
+
 }

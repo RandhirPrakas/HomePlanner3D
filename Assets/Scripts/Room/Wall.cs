@@ -16,6 +16,8 @@ public class Wall : MonoBehaviour
 
     public LineRenderer _lineRenderer;
 
+    public Material _material;
+
     // World-space label
     [SerializeField] private TMP_Text _labelPrefab;
     private TMP_Text _labelInstance;
@@ -24,9 +26,13 @@ public class Wall : MonoBehaviour
     [SerializeField] private GameObject _colliderGO;
     public BoxCollider _boxCollider;
 
+    private List<GameObject> _wallSegmentColliders = new List<GameObject>();
+
     #region Public Properties
     public WallPoint StartWallPoint { get => _startWallPoint; set => _startWallPoint = value; }
     public WallPoint EndWallPoint { get => _endWallPoint; set => _endWallPoint = value; }
+
+    public List<GameObject> WallSegmentColliders { get => _wallSegmentColliders; }
     #endregion
 
     #region Getter And Setters
@@ -50,10 +56,6 @@ public class Wall : MonoBehaviour
     public List<Room> GetRoomParent() => _parentRooms;
     #endregion
 
-    private void Start()
-    {
-        _labelPrefab = Resources.Load<TMP_Text>("Prefabs/Label/LabelPrefab");
-    }
 
     public void SetStartAndEndPosition(WallPoint startPosition, WallPoint endPosition, Room room = null)
     {
@@ -76,7 +78,7 @@ public class Wall : MonoBehaviour
 
         _lineRenderer.positionCount = 2;
         _lineRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-        _lineRenderer.material = Resources.Load<Material>("ProceduralMaterials/DefaultLRmaterial");
+        _lineRenderer.material = Constants.DEFAULT_LINERENDERER_MATERIAL;
         _lineRenderer.startWidth = AppHelper._lrThickness;
         _lineRenderer.endWidth = AppHelper._lrThickness;
     }
@@ -124,18 +126,16 @@ public class Wall : MonoBehaviour
 
     private void CreateLabel()
     {
-        if (_labelPrefab == null)
-            _labelPrefab = Resources.Load<TMP_Text>("Prefabs/Wall/WallLengthLabel");
-
         if (_labelInstance != null)
             Destroy(_labelInstance.gameObject);
 
-        _labelInstance = Instantiate(_labelPrefab, transform);
-        _labelInstance.alignment = TextAlignmentOptions.Center;
-        _labelInstance.fontSize = 10f;
-
-        // Initialize position
-        UpdateLabel(GetStartPosition(), GetEndPosition());
+        
+            _labelPrefab = Constants.DEFAULT_WALL_LENGTH_LABEL;
+            _labelInstance = Instantiate(_labelPrefab, transform);
+            _labelInstance.alignment = TextAlignmentOptions.Center;
+            _labelInstance.fontSize = 10f;
+            UpdateLabel(GetStartPosition(), GetEndPosition());
+        
     }
 
     private void UpdateLabel(Vector3 start, Vector3 end)
@@ -186,7 +186,7 @@ public class Wall : MonoBehaviour
             Quaternion.LookRotation(dir.normalized, Vector3.up)
         );
 
-        _boxCollider.size = new Vector3(4f, 3f, length);
+        _boxCollider.size = new Vector3(AppHelper._wallColliderThickness, 3f, length);
         _boxCollider.center = Vector3.zero;
     }
 
@@ -198,7 +198,7 @@ public class Wall : MonoBehaviour
         _colliderGO.tag = "Wall";
         _colliderGO.transform.SetParent(transform, false);
         _boxCollider = _colliderGO.AddComponent<BoxCollider>();
-        _boxCollider.size = new Vector3(4f, 3f, 1f);
+        _boxCollider.size = new Vector3(AppHelper._wallColliderThickness, 3f, 1f);
     }
 
     private void UpdateConenctedWalls()

@@ -13,6 +13,7 @@ public static class AppHelper
     public static readonly float _minimumWallHeight = 5f;
     public static readonly float _wallThickness = 1f;
     public static readonly float _wallHeight = 7f;
+    public static readonly float _wallColliderThickness = 1f;
 
     #endregion
 

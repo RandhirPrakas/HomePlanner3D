@@ -1,6 +1,8 @@
-using System.Collections.Generic;
-using UnityEngine;
+using System;
 using TMPro;
+using UnityEngine;
+using UnityEngine.AddressableAssets;
+using UnityEngine.ResourceManagement.AsyncOperations;
 
 public class DrawState : ICameraSubState
 {
@@ -35,7 +37,7 @@ public class DrawState : ICameraSubState
         GameManager.Instance._uiManager.OnExitOrthoIdleState();
         _strandedWalls = GameObject.Find("StrandedWalls").transform;
 
-        _lrMaterial = Resources.Load<Material>("ProceduralMaterials/DefaultLRmaterial");
+            _lrMaterial = Constants.DEFAULT_LINERENDERER_MATERIAL;
     }
 
     public void Exit()
@@ -129,7 +131,7 @@ public class DrawState : ICameraSubState
             {
                 _snappedEnd = _grid.GetNearestPointOnGrid(worldPos);
             }
-            _snappedEnd = AppHelper.SmartSnapToAxis(_snappedEnd, WallPointManager.Instance._allWallPoints); 
+            _snappedEnd = AppHelper.SmartSnapToAxis(_snappedEnd, WallPointManager.Instance._allWallPoints);
             _snappedEnd = AppHelper.WrapPosition(_startPos, _snappedEnd);
         }
 

@@ -1,12 +1,10 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 
 public class DoorOpeningStrategy : IOpeningCreationPlan
 {
-    public void AddOpeningSegments(
-        Wall wall, Opening opening,
-        Vector3 startLS, Vector3 endLS, Vector3 dirLS,
-        ref Vector3 cursorLS, List<GameObject> segments)
+    public void AddOpeningSegments(Wall wall, Opening opening,Vector3 startLS, Vector3 endLS, Vector3 dirLS,ref Vector3 cursorLS, List<GameObject> segments, bool createCol = true)
     {
         Vector3 openingLS = wall.transform.InverseTransformPoint(opening.OpeningPosition);
         float along = Vector3.Dot(openingLS - startLS, dirLS);
@@ -15,6 +13,9 @@ public class DoorOpeningStrategy : IOpeningCreationPlan
         Vector3 openingStartLS = startLS + dirLS * (along - half);
         Vector3 openingEndLS = startLS + dirLS * (along + half);
 
+        opening.OpeningStart = openingStartLS;
+        opening.OpeningEnd = openingEndLS;
+
         // Fill before opening
         if (Vector3.Distance(cursorLS, openingStartLS) > 0.01f)
         {
@@ -22,7 +23,7 @@ public class DoorOpeningStrategy : IOpeningCreationPlan
                 ProceduarlwallGenerator.GenerateWallSegment(
                     wall.transform.TransformPoint(cursorLS),
                     wall.transform.TransformPoint(openingStartLS),
-                    wall.transform));
+                    wall, createCol: createCol));
         }
 
         // Gap for door → starts at floor
@@ -30,9 +31,9 @@ public class DoorOpeningStrategy : IOpeningCreationPlan
             ProceduarlwallGenerator.GenerateWallSegment(
                 wall.transform.TransformPoint(openingStartLS),
                 wall.transform.TransformPoint(openingEndLS),
-                wall.transform,
-                AppHelper._wallHeight - opening.Height, // strip above
-                opening.Height));                       // door height
+                wall,
+                AppHelper._wallHeight - opening.Height,
+                opening.Height, createCol:createCol));
 
         cursorLS = openingEndLS;
     }

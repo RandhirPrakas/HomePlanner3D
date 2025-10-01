@@ -17,6 +17,11 @@ public class Room : MonoBehaviour
 
     public MeshCollider MeshCollider { get => _meshCollider; set => _meshCollider = value; }
 
+    private void Start()
+    {
+
+    }
+
     public void Initialize(List<WallPoint> points)
     {
         _roomWallPoints = points;
@@ -48,7 +53,8 @@ public class Room : MonoBehaviour
         // Store the generated mesh in a temporary variable.
         Mesh generatedMesh = _quadGenerator.GenerateFloor(_wallPointsPositions);
         _meshFilter.mesh = generatedMesh;
-        _meshRenderer.material = AppHelper._defaultFloorMaterial;
+
+        _meshRenderer.material = Constants.DEFAULT_FLOOR_MATERIAL;
 
         if (GetComponent<MeshCollider>() != null)
         {
@@ -59,6 +65,7 @@ public class Room : MonoBehaviour
         {
             MeshCollider = this.gameObject.AddComponent<MeshCollider>();
         }
+        this.gameObject.layer = LayerMask.NameToLayer(Constants.LAYER_FlOOR);
     }
 
     public void UpdateCollider()
@@ -74,7 +81,7 @@ public class Room : MonoBehaviour
         _meshRenderer = gameObject.AddComponent<MeshRenderer>();
     }
 
-   
+
 
     private void SetWallPointPositions()
     {

@@ -6,7 +6,7 @@ public class WindowOpeningStrategy : IOpeningCreationPlan
     public void AddOpeningSegments(
         Wall wall, Opening opening,
         Vector3 startLS, Vector3 endLS, Vector3 dirLS,
-        ref Vector3 cursorLS, List<GameObject> segments)
+        ref Vector3 cursorLS, List<GameObject> segments, bool createCol = true)
     {
         Vector3 openingLS = wall.transform.InverseTransformPoint(opening.OpeningPosition);
         float along = Vector3.Dot(openingLS - startLS, dirLS);
@@ -22,7 +22,7 @@ public class WindowOpeningStrategy : IOpeningCreationPlan
                 ProceduarlwallGenerator.GenerateWallSegment(
                     wall.transform.TransformPoint(cursorLS),
                     wall.transform.TransformPoint(openingStartLS),
-                    wall.transform));
+                    wall, createCol:createCol));
         }
 
         float center = openingLS.y;
@@ -36,9 +36,9 @@ public class WindowOpeningStrategy : IOpeningCreationPlan
                 ProceduarlwallGenerator.GenerateWallSegment(
                     wall.transform.TransformPoint(openingStartLS),
                     wall.transform.TransformPoint(openingEndLS),
-                    wall.transform,
+                    wall,
                     bottom,
-                    0f));
+                    0f, createCol: createCol));
         }
 
         // top strip
@@ -48,9 +48,9 @@ public class WindowOpeningStrategy : IOpeningCreationPlan
                 ProceduarlwallGenerator.GenerateWallSegment(
                     wall.transform.TransformPoint(openingStartLS),
                     wall.transform.TransformPoint(openingEndLS),
-                    wall.transform,
+                    wall,
                     AppHelper._wallHeight - top,
-                    top));
+                    top, createCol: createCol));
         }
 
         cursorLS = openingEndLS;

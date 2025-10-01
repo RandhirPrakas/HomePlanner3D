@@ -70,39 +70,6 @@ public class MoveRoomState : ICameraSubState
         ActiveRoom.MeshCollider.enabled = false;
     }
 
-    /*public void OnTouchHold(Vector3 worldPos, Vector2 screenPos)
-    {
-        if (!_isDragging || _activeRoom == null) return;
-
-        Vector3 delta = worldPos - _lastMousePosition;
-        delta.y = 0;
-
-        // Move all wall points of the room
-        foreach (WallPoint wp in _activeRoom._roomWallPoints)
-        {
-            wp.SetPosition(wp._position + delta);
-        }
-
-        // Update room floor mesh
-        _activeRoom.UpdateFloor();
-
-        // Update all walls connected to moved points
-        foreach (WallPoint wp in _activeRoom._roomWallPoints)
-        {
-            foreach (Wall wall in wp.GetConnectedWalls())
-            {
-                // Only update walls that are not part of other rooms sharing the point
-                if (wall.GetRoomParent() = _activeRoom)
-                    wall.UpdateFromPoints(true);
-                else
-                    wall.UpdateFromPoints();
-            }
-        }
-
-        _lastMousePosition = worldPos;
-    }*/
-
-    // In MoveRoomState.cs
     public void OnTouchHold(Vector3 worldPos, Vector2 screenPos)
     {
         if (!_isDragging || ActiveRoom == null) return;
@@ -110,14 +77,11 @@ public class MoveRoomState : ICameraSubState
         Vector3 delta = worldPos - _lastMousePosition;
         delta.y = 0;
 
-        // 1. Move all points that belong to the active room.
         foreach (WallPoint wp in ActiveRoom._roomWallPoints)
         {
             wp.SetPosition(wp._position + delta);
         }
 
-        // 2. Collect all unique walls that are connected to the moved points.
-        //    Using a HashSet prevents us from updating the same wall multiple times.
         HashSet<Wall> wallsToUpdate = new HashSet<Wall>();
         foreach (WallPoint wp in ActiveRoom._roomWallPoints)
         {
@@ -127,7 +91,6 @@ public class MoveRoomState : ICameraSubState
             }
         }
 
-        // 3. Update the room's floor mesh and every affected wall.
         ActiveRoom.UpdateFloor();
         foreach (Wall wall in wallsToUpdate)
         {
@@ -154,5 +117,5 @@ public class MoveRoomState : ICameraSubState
         throw new System.NotImplementedException();
     }
 
-    public void OnPinch(float delta) { /* Optional: zoom room camera */ }
+    public void OnPinch(float delta) {}
 }

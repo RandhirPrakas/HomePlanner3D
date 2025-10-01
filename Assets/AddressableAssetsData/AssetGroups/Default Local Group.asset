@@ -1,0 +1,284 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: Default Local Group
+  m_EditorClassIdentifier: 
+  m_GroupName: Default Local Group
+  m_Data:
+    m_SerializedData: []
+  m_GUID: 69931b4631568ae42bfb7dbc345d1df7
+  m_SerializeEntries:
+  - m_GUID: 02427059515626f479ba6db9d27f751f
+    m_Address: Assets/Prefabs/Opening/DefaultDoor.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 0ce2cc9ae2bbbd34eb518449b5cfa744
+    m_Address: Assets/Prefabs/Chair/Chair_5.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 12170b9046310004f84dca97bdca2655
+    m_Address: Assets/Modes/Chair/Thumbnail/Chair_5/chair_5_colour_03.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 152b59e0ba96c584d902d8a1a2945495
+    m_Address: Assets/Prefabs/WallLabelPrefab.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Prefab
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 17674e36e2ebee948b96dba365027776
+    m_Address: Assets/Modes/Chair/Thumbnail/Chair_1/chair_1_colour_01.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1d3fedb16b1bead4c9c8c22f81b2b5fc
+    m_Address: Assets/Modes/Chair/Thumbnail/Chair_1/chair_1_colour_02.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 2660211dcceffdc4295b26bc9d384140
+    m_Address: Assets/Prefabs/ObjectDistanceLabelggg.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Prefab
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 2827c33ee74d4ed4d8b48089c6508108
+    m_Address: Assets/Modes/Chair/Thumbnail/Chair_2/chair_2_colour_01.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 29ccb9e5c59b03a468ab16bbbf578400
+    m_Address: Assets/Prefabs/Wall/WallLengthLabeldfd.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Prefab
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 2dab3bf01777e3f45a220e6923ca4ece
+    m_Address: Assets/Modes/Chair/Thumbnail/chair_4/chair_4_colour_02.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3313ba464a4951e499a033c7ccb6de54
+    m_Address: Assets/Modes/Chair/Thumbnail/Chair_1/chair_1_colour_03.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 34db79e9d4d8e434ab9ad9113e2c5507
+    m_Address: Assets/Prefabs/Chair/Chair_4.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 381f7c9c7a97f5441a12d0db86d24c4d
+    m_Address: Assets/Prefabs/Door/DoorVisualizer 1.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Prefab
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3c899a04ceeaf9a40be837d9684c7c15
+    m_Address: Assets/Prefabs/ObjectDistanceLabel.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Prefab
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3e079846183ec1d49b11549c1a9dfdf4
+    m_Address: Assets/Modes/Chair/Thumbnail/chair_4/chair_4_colour_03.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 48a91df3a4b15fe43b9d6436eb28f702
+    m_Address: Assets/Prefabs/ProceduralMaterials/DefaultLRmaterial.mat
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Material
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 67d60b4b8fb8a7349a3818286e7053a9
+    m_Address: Assets/Models/Dining Table/Four_Seater_Dinning_Table/Thumbnail/Four_Seater_Dining_Table_01.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6c090488074467f41864cf9ed1eb6b58
+    m_Address: Assets/Prefabs/TempPrefabs/TestSpawner.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Prefab
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6f223038fa4e3454e81e4d0689a7e7df
+    m_Address: Assets/Prefabs/ProceduralMaterials/InvalidPlacement.mat
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Material
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 755a5f6f7bc02e94991eb2da69dc5e20
+    m_Address: Assets/Prefabs/Door/WindowVisualizer.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Prefab
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 79bdbe3f55b88004d9306162e4888104
+    m_Address: Assets/Modes/Chair/Thumbnail/Chair_5/chair_5_colour_02.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 79e9c72f542234440b3051641fa32fce
+    m_Address: Assets/Prefabs/Chair/Chair_2.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7b960497a9ab8504a9a9adbc8bb50dac
+    m_Address: Assets/Models/Dining Table/Four_Seater_Dinning_Table/FBX/Four_Seater_Dining_Table_01.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7f9719337acf953449f0fa47f8453ef3
+    m_Address: Assets/Prefabs/circularHandlePrefab.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Prefab
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8b2cdf216f2be884eb73aa081e6c7424
+    m_Address: Assets/Prefabs/Wall/WallLengthLabel.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Prefab
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 90d07ae6ae5e66f4eb1b5f9a67ed99ce
+    m_Address: Assets/Modes/Chair/Thumbnail/Chair_2/chair_2_colour_03.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 91b77e4a60eeb40489a2bf70d9aee7a5
+    m_Address: Assets/Modes/Chair/Thumbnail/Chair_2/chair_2_colour_02.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 91e3dde712ec25f43bfaeb3e3a53b36d
+    m_Address: Assets/Prefabs/ModelPrefab.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 927af73db026bf543aa418bc49ac07fd
+    m_Address: Assets/Modes/Chair/Thumbnail/Chair_3/Chair_3_colour_01.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9ba25dfd266ea1f47af06ee6c501c86b
+    m_Address: Assets/Prefabs/ProceduralMaterials/ObjectDistanceLrMat.mat
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Material
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9e87cec8c31f6b64ca92f8c5738ab7ab
+    m_Address: Assets/Modes/Chair/Thumbnail/Chair_5/chair_5_colour_04.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a0b6fdc53070659459cff85cac056308
+    m_Address: Assets/Prefabs/Label/LabelPrefab.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Prefab
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a8a53bf767441524fa6e7fa721588edf
+    m_Address: Assets/Prefabs/Chair/Chair_3.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b6122d0cea37a6845863d3e850d97d82
+    m_Address: Assets/Prefabs/ProceduralMaterials/ValidPlacement.mat
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Material
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: bc57420dba6f28d498ec35bb269bc150
+    m_Address: Assets/Modes/Chair/Thumbnail/Chair_3/Chair_3_colour_02.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: cc16b514158b327498f3b1dbb341bac7
+    m_Address: Assets/Modes/Chair/Thumbnail/chair_4/chair_4_colour_01.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: cfc09d36473518749b1c45b0a06040c3
+    m_Address: Assets/Prefabs/ProceduralMaterials/QuadMaterial.mat
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Material
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d18ece58d73ffa44eb78057d84c0e3fd
+    m_Address: Assets/Models/Door/Thumbnail/Door.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d913f0e82f3a962489419a92d5fc35cd
+    m_Address: Assets/Prefabs/Door/DoorVisualizer.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Prefab
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: df30c022748d8f942b505c2779f452d5
+    m_Address: Assets/Prefabs/EditUICanvas.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Prefab
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e49111c018ef9fc4a832fc8a2d6a6f3d
+    m_Address: Assets/Modes/Chair/FBX/Chair_1.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e5015b97f476e754ea8711efc737e0f8
+    m_Address: Assets/Modes/Chair/Thumbnail/chair_4/chair_4_colour_04.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ea2e6b898f4052840938561998d3137d
+    m_Address: Assets/Prefabs/ProceduralMaterials/HighlightedMaterialColor.mat
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Material
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ea74e48c465a55c4aa891e09d01b260d
+    m_Address: Assets/Modes/Chair/Thumbnail/Chair_2/chair_2_colour_04.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f326101d5ee82004ab12c00e626c9073
+    m_Address: Assets/Modes/Chair/Thumbnail/Chair_5/chair_5_colour_01.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f8d453c38de144f428f2c5d24fb52019
+    m_Address: Assets/Modes/Chair/Thumbnail/Chair_3/Chair_3_colour_03.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f9b00cd87c34f344cbf6dafdb49d3d1a
+    m_Address: Assets/Prefabs/ProceduralMaterials/DefaultFloorMaterial.mat
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Material
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ffc2ebe9a6442b04a84d0091a99169c0
+    m_Address: Assets/Modes/Chair/Thumbnail/Chair_3/Chair_3_colour_04.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: dd3de0d78db1de44da350d107a57b282, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: 2143d911e4b9a6b45b44ef5bbdd1e03a, type: 2}
+    - {fileID: 11400000, guid: 31e089b200132af46afa8fd95f3c3058, type: 2}

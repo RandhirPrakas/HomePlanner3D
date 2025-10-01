@@ -6,8 +6,10 @@ public class Door : Opening
 {
     public override void Initialize(Wall wall, Vector3 worldPosition)
     {
-        Height = 4f;
+        Height = 4;
+        //Height = 2.1336f;
         Width = 2.5f;
+        //Width = 1.400001264f;
         _parentWall = wall;
         OpeningType = OpeningType.Door;
 

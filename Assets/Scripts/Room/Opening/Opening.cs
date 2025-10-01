@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 public abstract class Opening : MonoBehaviour
@@ -8,11 +8,34 @@ public abstract class Opening : MonoBehaviour
     [SerializeField] private Vector3 _openingPosition;
     [SerializeField] private float _normalizedPosition;
 
-    [SerializeField] private float _width = 2f;
-    [SerializeField] private float _height = 2f;
+    [SerializeField] private float _width = 2;
+    [SerializeField] private float _height = 2;
 
     [SerializeField] private GameObject _strandedOpenings;
     public OpeningVisualizer _openingVisualizer;
+
+    // Tests
+    [SerializeField] private Vector3 _openingStart, _openingEnd;
+
+    public Vector3 OpeningStart 
+    {
+        get => _openingStart;
+        set
+        {
+            if (_openingStart == value) return;
+            _openingStart = value;
+        }
+    }
+
+    public Vector3 OpeningEnd
+    {
+        get => _openingEnd;
+        set
+        {
+            if(_openingEnd == value) return;
+            _openingEnd = value;
+        }
+    }
 
     public float NormalizedPosition => _normalizedPosition;
     public Transform StrandedOpening { get => _strandedOpenings.transform; }
@@ -111,4 +134,56 @@ public abstract class Opening : MonoBehaviour
             transform.rotation = Quaternion.LookRotation(wallDirection);
         }
     }
+
+
+    /*public void ShowResizeHandles(GameObject handlePrefab)
+    {
+        if (handlePrefab == null)
+        {
+            Debug.LogError("Handle Prefab is not assigned.");
+            return;
+        }
+
+        HideResizeHandles();
+
+        if (_parentWall == null)
+        {
+            Debug.LogWarning("Cannot show handles because the opening has no parent wall.");
+            return;
+        }
+
+        Vector3 openingCenterInWallSpace = this.OpeningPosition;
+
+        float zOffset = -AppHelper._wallThickness / 2f - .2f;
+
+        Vector3 topRightOffset = new Vector3(Width / 2f, Height / 2f, zOffset);
+        Vector3 topLeftOffset = new Vector3(-Width / 2f, Height / 2f, zOffset);
+        Vector3 bottomRightOffset = new Vector3(Width / 2f, -Height / 2f, zOffset);
+        Vector3 bottomLeftOffset = new Vector3(-Width / 2f, -Height / 2f, zOffset);
+
+        Vector3[] handleOffsets = { topRightOffset, topLeftOffset, bottomRightOffset, bottomLeftOffset };
+
+        foreach (Vector3 offset in handleOffsets)
+        {
+            Vector3 handlePosInWallSpace = openingCenterInWallSpace + offset;
+
+            Vector3 handlePosInWorldSpace = _parentWall.transform.TransformPoint(handlePosInWallSpace);
+
+            GameObject handle = Instantiate(handlePrefab, this.transform.position, Quaternion.identity);
+            handle.transform.position = handlePosInWorldSpace;
+
+            _resizeHandles.Add(handle);
+        }
+    }*/
+
+    /*public void HideResizeHandles()
+    {
+        foreach (GameObject handle in _resizeHandles)
+        {
+            Destroy(handle);
+        }
+
+        // Clear the list.
+        _resizeHandles.Clear();
+    }*/
 }

@@ -7,9 +7,10 @@ public class AddOpeningState<T> : ICameraSubState where T : Opening
     private GameObject _prefab;
     private OrthoCam _orthoCam;
 
-    public AddOpeningState(OrthoCam orthoCam, string prefabPath)
+    public AddOpeningState(OrthoCam orthoCam, GameObject prefab)
     {
-        _prefab = Resources.Load<GameObject>(prefabPath);
+        
+        _prefab = prefab;
         _orthoCam = orthoCam;
     }
 

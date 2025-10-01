@@ -28,7 +28,7 @@ public class EditRoomPointsState : ICameraSubState
         if (wallpoint != null)
         {
             SelectedPoint = wallpoint;
-            SetEditUI();
+            //SetEditUI();
         }
     }
 
@@ -92,7 +92,7 @@ public class EditRoomPointsState : ICameraSubState
         if (_selectedPoint != null)
         {
             _selectedPoint._activeSphere.GetComponent<MeshRenderer>().material.color = _highlightedColor;
-            SetEditUI();
+            //SetEditUI();
         }
     }
 

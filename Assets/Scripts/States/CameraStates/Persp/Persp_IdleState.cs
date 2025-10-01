@@ -11,13 +11,15 @@ public class Persp_IdleState : ICameraSubState
     }
     public void Enter()
     {
+        Debug.Log("Entered Persp_Idle State");
+
         if (GameManager.Instance._perspCamActive)
             _perspCam = GameManager.Instance.GetPerspCam();
     }
 
     public void Exit()
     {
-
+        Debug.Log("Exiting Persp_Idle State");
     }
 
     public void Init(Vector3 worldPos, Vector2 screenPos)
@@ -50,6 +52,12 @@ public class Persp_IdleState : ICameraSubState
     {
         if (GameManager.Instance._perspCamActive)
             _perspCam.UpdateCamera();
+    }
+
+    public void OnPan(Vector2 delta)
+    {
+        if (GameManager.Instance._perspCamActive)
+            _perspCam.PanCameraByDelta(delta);
     }
 
 }

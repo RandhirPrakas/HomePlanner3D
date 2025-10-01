@@ -1,105 +1,87 @@
-﻿using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
-public class EditOpeningIn3DState : ICameraSubState
+public class EditOpeningIn3DState<T> : ICameraSubState where T : Opening
 {
-    private Opening _selectedOpening;
+    private T _selectedOpening;
     private Camera _camera;
-    private Plane _dragPlane;
-    private Vector3 _dragOffset;
+    // We no longer need the dragPlane or dragOffset for this logic
+    // private Plane _dragPlane; 
+    // private Vector3 _dragOffset;
+
+    [SerializeField] private LayerMask _wallLayerMask;
 
     private float _snapThreshold = 2f;
+    public GameObject circularHandlePrefab;
 
-    public EditOpeningIn3DState(Camera camera)
+    public T SelectedOpening
+    {
+        get => _selectedOpening;
+        set
+        {
+            if (_selectedOpening == value) return;
+            _selectedOpening = value;
+        }
+    }
+
+    public EditOpeningIn3DState(Camera camera, T Opening)
     {
         _camera = camera ?? Camera.main;
-    }
+        if (circularHandlePrefab == null)
+        {
+            circularHandlePrefab = Resources.Load<GameObject>("Prefabs/circularHandlePrefab");
+        }
 
+        _wallLayerMask = LayerMask.GetMask(Constants.LAYER_WALL);
+        Debug.Log(_wallLayerMask.value);
+
+        SelectedOpening = Opening;
+        ShowResizer(Opening);
+    }
     public void Enter()
     {
-        Debug.Log("Entered EditOpeningIn3DState");
+        Debug.Log($"Entered EditOpeningIn3DState<{typeof(T).Name}>");
     }
 
+    public void Init(Vector3 worldPos, Vector2 screenPos) { }
+    public void Update() { }
     public void Exit()
     {
-        Debug.Log("Exited EditOpeningIn3DState");
+        Debug.Log($"Exited EditOpeningIn3DState<{typeof(T).Name}>");
         _selectedOpening = null;
     }
-
-    public void Update() { }
 
     public void OnTouchStart(Vector3 worldPos, Vector2 screenPos)
     {
         Ray ray = _camera.ScreenPointToRay(screenPos);
+        // We only care if we hit an opening to start the drag
         if (Physics.Raycast(ray, out RaycastHit hit, 1000f))
         {
-            if (hit.collider.TryGetComponent<Opening>(out var opening))
+            if (hit.collider.TryGetComponent<T>(out var opening))
             {
-                _selectedOpening = opening;
-
-                _dragPlane = new Plane(-_camera.transform.forward, hit.point);
-
-                if (_dragPlane.Raycast(ray, out float enter))
-                {
-                    Vector3 hitPoint = ray.GetPoint(enter);
-                    _dragOffset = _selectedOpening.transform.position - hitPoint;
-                }
+                SelectedOpening = opening;
             }
         }
     }
 
     public void OnTouchHold(Vector3 worldPos, Vector2 screenPos)
     {
-        if (_selectedOpening == null) return;
+        if (SelectedOpening == null) return;
 
-        Ray ray = _camera.ScreenPointToRay(screenPos);
-        if (!_dragPlane.Raycast(ray, out float enter)) return;
-
-        Vector3 hitPoint = ray.GetPoint(enter);
-        Vector3 targetPos = hitPoint + _dragOffset;
-
-        Wall nearestWall = FindNearestWall(targetPos, out Vector3 closestPoint);
-        if (nearestWall != null)
-        {
-            targetPos = new Vector3(closestPoint.x, _selectedOpening.transform.position.y, closestPoint.z);
-
-            if (_selectedOpening.ParentWall != nearestWall)
-            {
-                Wall oldWall = _selectedOpening.ParentWall;
-                _selectedOpening._lastWall = oldWall;
-                if (oldWall != null)
-                    oldWall._allOpenings.Remove(_selectedOpening);
-
-                _selectedOpening.transform.SetParent(nearestWall.transform, true);
-                _selectedOpening._parentWall = nearestWall;
-
-                if (!nearestWall._allOpenings.Contains(_selectedOpening))
-                    nearestWall._allOpenings.Add(_selectedOpening);
-            }
-
-            _selectedOpening.OpeningPosition = nearestWall.transform.InverseTransformPoint(targetPos);
-
-            Vector3 dir = (nearestWall.GetEndPosition() - nearestWall.GetStartPosition()).normalized;
-            _selectedOpening.transform.rotation = Quaternion.LookRotation(dir, Vector3.up);
-            _selectedOpening.transform.position = targetPos;
-
-            //Use centralized generator
-            WallMeshGenerator.GenerateWallWithOpenings(nearestWall);
-
-            if (_selectedOpening._lastWall != null)
-            {
-                WallMeshGenerator.GenerateWallWithOpenings(_selectedOpening._lastWall);
-                _selectedOpening._lastWall = null;
-            }
-        }
+        // Call the updated placement logic
+        MoveOpeningOnWall(screenPos, false);
     }
 
     public void OnTouchEnd(Vector3 worldPos, Vector2 screenPos)
     {
-        if (_selectedOpening != null)
+        if (SelectedOpening != null)
         {
-            Debug.Log($"Moved {_selectedOpening.name} to {_selectedOpening.OpeningPosition} on {_selectedOpening.ParentWall?.name}");
-            _selectedOpening = null;
+            Debug.Log($"Moved {SelectedOpening.name} to {SelectedOpening.OpeningPosition} on {SelectedOpening.ParentWall?.name}");
+            ClearWallSegment();
+            // Final placement with collider generation
+            MoveOpeningOnWall(screenPos, true);
+
+            // Deselect after the operation is complete
+            SelectedOpening = null;
         }
     }
 
@@ -115,42 +97,136 @@ public class EditOpeningIn3DState : ICameraSubState
         }
     }
 
-    public void Init(Vector3 worldPos, Vector2 screenPos) { }
 
     #region Helpers
-    private Wall FindNearestWall(Vector3 point, out Vector3 closestPoint)
+
+    /*private void MoveOpeningOnWall(Vector2 screenPos, bool createCol = true)
     {
-        Wall nearest = null;
-        float minDist = float.MaxValue;
-        closestPoint = point;
+        Ray ray = _camera.ScreenPointToRay(screenPos);
 
-        foreach (Wall wall in WallManager.Instance._allWalls)
+        if (Physics.Raycast(ray, out RaycastHit hit, 1000f, _wallLayerMask))
         {
-            if (wall == null) continue;
+            Debug.Log("Collided on Wall " + hit.collider.gameObject.name);
+            Vector3 targetPos = hit.point;
 
-            Vector3 a = wall.GetStartPosition();
-            Vector3 b = wall.GetEndPosition();
-
-            Vector3 proj = ClosestPointOnLine(a, b, point);
-            float dist = Vector3.Distance(proj, point);
-
-            if (dist < minDist)
+            if (!hit.collider.TryGetComponent<Wall>(out Wall nearestWall))
             {
-                minDist = dist;
-                nearest = wall;
-                closestPoint = proj;
+                nearestWall = hit.collider.GetComponentInParent<Wall>();
+                Debug.Log("Collided on Wall whose parent is " + hit.collider.gameObject.name);
+            }
+
+            if (nearestWall != null)
+            {
+                targetPos.y = SelectedOpening.transform.position.y;
+
+                if (SelectedOpening.ParentWall != nearestWall)
+                {
+                    Wall oldWall = SelectedOpening.ParentWall;
+                    SelectedOpening._lastWall = oldWall;
+                    if (oldWall != null)
+                        oldWall._allOpenings.Remove(SelectedOpening);
+
+                    SelectedOpening.transform.SetParent(nearestWall.transform, true);
+                    SelectedOpening._parentWall = nearestWall;
+
+                    if (!nearestWall._allOpenings.Contains(SelectedOpening))
+                        nearestWall._allOpenings.Add(SelectedOpening);
+                }
+
+                SelectedOpening.transform.position = targetPos;
+                SelectedOpening.OpeningPosition = nearestWall.transform.InverseTransformPoint(targetPos);
+
+                Vector3 dir = (nearestWall.GetEndPosition() - nearestWall.GetStartPosition()).normalized;
+                SelectedOpening.transform.rotation = Quaternion.LookRotation(dir, Vector3.up);
+
+                WallMeshGenerator.GenerateWallWithOpenings(nearestWall, createCol);
+
+                if (SelectedOpening._lastWall != null)
+                {
+                    WallMeshGenerator.GenerateWallWithOpenings(SelectedOpening._lastWall, createCol);
+                    SelectedOpening._lastWall = null;
+                }
             }
         }
+    }*/
 
-        return nearest;
-    }
-
-    private Vector3 ClosestPointOnLine(Vector3 a, Vector3 b, Vector3 point)
+    private void MoveOpeningOnWall(Vector2 screenPos, bool createCol = true)
     {
-        Vector3 ab = b - a;
-        float t = Vector3.Dot(point - a, ab) / ab.sqrMagnitude;
-        t = Mathf.Clamp01(t);
-        return a + ab * t;
+        Ray ray = _camera.ScreenPointToRay(screenPos);
+
+        // VISUAL DEBUG: Draw a red line in the scene view to show the ray's path
+        Debug.DrawRay(ray.origin, ray.direction * 1000f, Color.red);
+
+        if (Physics.Raycast(ray, out RaycastHit hit, 1000f, _wallLayerMask))
+        {
+            Debug.Log($"Raycast hit: {hit.collider.name}");
+
+            Vector3 targetPos = hit.point;
+
+            if (!hit.collider.TryGetComponent<Wall>(out Wall nearestWall))
+            {
+                nearestWall = hit.collider.GetComponentInParent<Wall>();
+            }
+
+            if (nearestWall != null)
+            {
+                targetPos.y = SelectedOpening.transform.position.y;
+
+                if (SelectedOpening.ParentWall != nearestWall)
+                {
+                    Wall oldWall = SelectedOpening.ParentWall;
+                    SelectedOpening._lastWall = oldWall;
+                    if (oldWall != null)
+                        oldWall._allOpenings.Remove(SelectedOpening);
+
+                    SelectedOpening.transform.SetParent(nearestWall.transform, true);
+                    SelectedOpening._parentWall = nearestWall;
+
+                    if (!nearestWall._allOpenings.Contains(SelectedOpening))
+                        nearestWall._allOpenings.Add(SelectedOpening);
+                }
+
+                SelectedOpening.transform.position = targetPos;
+                SelectedOpening.OpeningPosition = nearestWall.transform.InverseTransformPoint(targetPos);
+
+                Vector3 dir = (nearestWall.GetEndPosition() - nearestWall.GetStartPosition()).normalized;
+                SelectedOpening.transform.rotation = Quaternion.LookRotation(dir, Vector3.up);
+
+                WallMeshGenerator.GenerateWallWithOpenings(nearestWall, createCol);
+
+                if (SelectedOpening._lastWall != null)
+                {
+                    WallMeshGenerator.GenerateWallWithOpenings(SelectedOpening._lastWall, createCol);
+                    SelectedOpening._lastWall = null;
+                }
+            }
+        }
+        else
+        {
+            Debug.Log("Raycast did not hit anything on the 'Walls' layer.");
+        }
     }
+
+    private void ClearWallSegment()
+    {
+        if (SelectedOpening == null || SelectedOpening.ParentWall == null) return;
+
+        foreach (GameObject go in SelectedOpening.ParentWall.WallSegmentColliders)
+        {
+            GameObject.Destroy(go);
+        }
+        SelectedOpening.ParentWall.WallSegmentColliders.Clear();
+    }
+
+    public void ShowResizer(T opening)
+    {
+        SelectedOpening = opening;
+    }
+
+    public void HideResizer()
+    {
+        SelectedOpening = null;
+    }
+
     #endregion
 }

@@ -47,7 +47,7 @@ public class MoveWallState : ICameraSubState
 
         // This line can cause errors if the material path is wrong or in builds.
         // It's better to assign this material via the inspector.
-        _defaultColor = Resources.Load<Material>("ProceduralMaterials/DefaultLRmaterial").color;
+        _defaultColor = Constants.DEFAULT_LINERENDERER_MATERIAL.color;
 
         if (canChangeColor)
             ActiveWall.GetComponent<LineRenderer>().material.color = Color.blue;

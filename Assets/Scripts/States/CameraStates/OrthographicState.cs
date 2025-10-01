@@ -16,7 +16,7 @@ public class OrthographicState : CameraState
         ShowGameobjectsFromOrthoState();
         GameManager.Instance.GetSubStateManager().SetOrthoIdleState();
         _orthoCam.FitToAllWalls();
-
+        Delete3DColliders();
         Two_D_Settings();
     }
 
@@ -71,6 +71,18 @@ public class OrthographicState : CameraState
         {
             if(opening.GetComponent<BoxCollider>()!= null)
                 opening.GetComponent<BoxCollider>().enabled = false;
+        }
+    }
+
+    private void Delete3DColliders()
+    {
+        foreach(Wall wall in WallManager.Instance._allWalls)
+        {
+            foreach(GameObject go in wall.WallSegmentColliders)
+            {
+                GameObject.Destroy(go);
+            }
+            wall.WallSegmentColliders.Clear();
         }
     }
 }

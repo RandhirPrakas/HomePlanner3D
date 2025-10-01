@@ -1,10 +1,10 @@
 using System.Collections.Generic;
-using System.Threading.Tasks.Sources;
+using TMPro;
 using UnityEngine;
 
 public class EditObjectState : ICameraSubState
 {
-    // It will hold a reference to one of these, but not both.
+    // Camera references remain the same
     private readonly OrthoCam _orthoCam;
     private readonly PerspCam _perspCam;
 
@@ -20,28 +20,34 @@ public class EditObjectState : ICameraSubState
     private readonly Material _invalidPlacementMaterial;
     private readonly Dictionary<Renderer, Material[]> _originalMaterials = new Dictionary<Renderer, Material[]>();
 
-    public GameObject SelectedObject { get => _selectedObject;
-        set{
-            if (SelectedObject == value) return;
+    // The new visualizer class handles all distance measurement logic
+    private readonly MeasurementVisualizer _measurementVisualizer;
+
+    public GameObject SelectedObject
+    {
+        get => _selectedObject;
+        set
+        {
+            if (_selectedObject == value) return;
             _selectedObject = value;
         }
     }
 
-    /// <summary>
-    /// A single constructor that can accept either camera type.
-    /// Pass 'null' for the camera you are not using.
-    /// </summary>
     public EditObjectState(OrthoCam orthoCam, PerspCam perspCam, GameObject objectToEdit)
     {
         _orthoCam = orthoCam;
         _perspCam = perspCam;
 
-        SelectedObject= objectToEdit;
+        SelectedObject = objectToEdit;
         _placeableData = SelectedObject.GetComponent<PlaceableObject>();
         _objectCollider = SelectedObject.GetComponent<Collider>();
 
-        _validPlacementMaterial = Resources.Load<Material>("ProceduralMaterials/ValidPlacement");
-        _invalidPlacementMaterial = Resources.Load<Material>("ProceduralMaterials/InvalidPlacement");
+        // Resource loading remains the same
+        _validPlacementMaterial = Constants.DEFAULT_VALID_PLACAMENT_MATERIAL;
+        _invalidPlacementMaterial = Constants.DEFAULT_INVALID_PLACAMENT_MATERIAL;
+
+        // Instantiate the visualizer, which handles its own setup
+        _measurementVisualizer = new MeasurementVisualizer();
     }
 
     public void Enter()
@@ -54,6 +60,9 @@ public class EditObjectState : ICameraSubState
         CacheOriginalMaterials();
         SetFeedbackMaterial(_invalidPlacementMaterial);
 
+        // Initial update
+        _measurementVisualizer.UpdateVisuals(_objectCollider);
+
         Debug.Log("Entered Edit Object State");
     }
 
@@ -61,17 +70,13 @@ public class EditObjectState : ICameraSubState
     {
         if (_objectCollider != null) _objectCollider.enabled = true;
         RestoreOriginalMaterials();
+
+        // The visualizer handles its own cleanup
+        _measurementVisualizer.DestroyVisuals();
     }
 
-    public void OnTouchStart(Vector3 worldPos, Vector2 screenPos)
-    {
-        UpdateObjectPosition(screenPos);
-    }
-
-    public void OnTouchHold(Vector3 worldPos, Vector2 screenPos)
-    {
-        UpdateObjectPosition(screenPos);
-    }
+    public void OnTouchStart(Vector3 worldPos, Vector2 screenPos) => UpdateObjectPosition(screenPos);
+    public void OnTouchHold(Vector3 worldPos, Vector2 screenPos) => UpdateObjectPosition(screenPos);
 
     public void OnTouchEnd(Vector3 worldPos, Vector2 screenPos)
     {
@@ -82,7 +87,7 @@ public class EditObjectState : ICameraSubState
             SelectedObject.transform.SetPositionAndRotation(_originalPosition, _originalRotation);
         }
 
-        // Return to the correct idle state
+        // State transition logic remains the same
         if (_orthoCam != null)
         {
             GameManager.Instance.GetSubStateManager().SetSubState(new Ortho_IdleState(_orthoCam));
@@ -95,7 +100,7 @@ public class EditObjectState : ICameraSubState
 
     public void Update()
     {
-        // Call the update method of the active camera
+        // Camera handling remains the same
         if (_orthoCam != null)
         {
             _orthoCam.Update();
@@ -105,22 +110,19 @@ public class EditObjectState : ICameraSubState
             _perspCam.UpdateCamera();
         }
 
-        if(Input.GetKeyDown(KeyCode.UpArrow))
+        if (Input.GetKeyDown(KeyCode.UpArrow))
         {
-            // Increase Size
             IncreaseSize();
         }
-        else if(Input.GetKeyDown(KeyCode.DownArrow))
+        else if (Input.GetKeyDown(KeyCode.DownArrow))
         {
-            // Decrease Size
             DecreaseSize();
         }
-
     }
 
     public void OnPinch(float delta)
     {
-        // Call the zoom method of the active camera
+        // Camera handling remains the same
         if (_orthoCam != null)
         {
             _orthoCam.ZoomCamera(delta);
@@ -161,16 +163,14 @@ public class EditObjectState : ICameraSubState
             }
         }
 
-        if (foundValidSurface && !_isPlacementValid)
+        if (foundValidSurface != _isPlacementValid)
         {
-            _isPlacementValid = true;
-            SetFeedbackMaterial(_validPlacementMaterial);
+            _isPlacementValid = foundValidSurface;
+            SetFeedbackMaterial(_isPlacementValid ? _validPlacementMaterial : _invalidPlacementMaterial);
         }
-        else if (!foundValidSurface && _isPlacementValid)
-        {
-            _isPlacementValid = false;
-            SetFeedbackMaterial(_invalidPlacementMaterial);
-        }
+
+        // Just one call to update all distance visuals
+        _measurementVisualizer.UpdateVisuals(_objectCollider);
     }
 
     #region Material Handling
@@ -203,28 +203,25 @@ public class EditObjectState : ICameraSubState
     }
     #endregion
 
-    public void Init(Vector3 worldPos, Vector2 screenPos) { }
-
     private void GroundObject()
     {
-        if (SelectedObject== null)
-            return;
-        SelectedObject.transform.position = new Vector3(SelectedObject.transform.position.x, SelectedObject.transform.localScale.y/2, SelectedObject.transform.position.z);
+        if (SelectedObject == null) return;
+        SelectedObject.transform.position = new Vector3(SelectedObject.transform.position.x, SelectedObject.transform.localScale.y / 2, SelectedObject.transform.position.z);
     }
 
     private void IncreaseSize()
     {
-        if (SelectedObject == null)
-            return;
+        if (SelectedObject == null) return;
         SelectedObject.transform.localScale += SelectedObject.transform.localScale * 0.5f;
         GroundObject();
     }
 
     private void DecreaseSize()
     {
-        if (SelectedObject == null)
-            return;
+        if (SelectedObject == null) return;
         SelectedObject.transform.localScale -= SelectedObject.transform.localScale * 0.5f;
         GroundObject();
     }
+
+    public void Init(Vector3 worldPos, Vector2 screenPos) { }
 }

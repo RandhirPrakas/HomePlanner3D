@@ -4,7 +4,7 @@ using UnityEngine;
 
 public static class WallMeshGenerator
 {
-    public static void GenerateWallWithOpenings(Wall wall)
+    public static void GenerateWallWithOpenings(Wall wall, bool createCol=true)
     {
         List<GameObject> segments = new List<GameObject>();
 
@@ -14,7 +14,7 @@ public static class WallMeshGenerator
                 ProceduarlwallGenerator.GenerateWallSegment(
                     wall.GetStartPosition(),
                     wall.GetEndPosition(),
-                    wall.transform));
+                    wall));
         }
         else
         {
@@ -38,7 +38,7 @@ public static class WallMeshGenerator
             foreach (var opening in orderedOpenings)
             {
                 var strategy = OpeningCreationFactory.CreateOpening(opening.OpeningType);
-                strategy.AddOpeningSegments(wall, opening, startLS, endLS, dirLS, ref cursorLS, segments);
+                strategy.AddOpeningSegments(wall, opening, startLS, endLS, dirLS, ref cursorLS, segments, createCol:createCol);
             }
 
             // After last opening
@@ -48,10 +48,10 @@ public static class WallMeshGenerator
                     ProceduarlwallGenerator.GenerateWallSegment(
                         wall.transform.TransformPoint(cursorLS),
                         wall.transform.TransformPoint(endLS),
-                        wall.transform));
+                        wall, createCol: createCol));
             }
         }
 
-        ProceduarlwallGenerator.CombineChildMeshes(wall.transform, segments);
+        ProceduarlwallGenerator.CombineChildMeshes(wall, segments);
     }
 }

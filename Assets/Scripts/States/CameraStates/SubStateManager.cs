@@ -31,6 +31,7 @@ public class SubStateManager
         AppEventHandler.OnTouchEnd += SwitchSubstate;
 
         OrthoCamera = GameManager.Instance.GetOrthoCamera();
+        PerspectiveCam = GameManager.Instance.GetPerspCam();
 
         _perspIdleState = new Persp_IdleState(PerspectiveCam);
         _orthoIdleState = new Ortho_IdleState(_orthoCam);
@@ -133,15 +134,37 @@ public class SubStateManager
 #endif
             Debug.Log(gameObject.name);
 
+
+            if (gameObject.CompareTag(Constants.TAG_GROUND))
+            {
+                SetPerspIdleState();
+                return;
+            }
+
             // To Edit Alread placed objects like Chairs/ table etcs
             if (gameObject.CompareTag(Constants.TAG_PLACABLES) && GameManager.Instance._placeObjects)
             {
-                SetSubState(new EditObjectState(null, PerspectiveCam, gameObject));
+                SetSubState(new EditObjectIn3D(null, PerspectiveCam, gameObject));
+                return;
             }
 
-            if (gameObject.CompareTag(Constants.TAG_DOOR) || gameObject.CompareTag(Constants.TAG_WINDOW) && GameManager.Instance._editOpening)
+            if(gameObject.CompareTag(Constants.TAG_WALL))
             {
-                SetSubState(new EditOpeningIn3DState(Camera.main));
+                Wall wall = gameObject.GetComponentInParent<Wall>();
+                Debug.Log($"Wall Found {wall.gameObject.name}");
+                SetSubState(new EditWallin3D(wall));
+                return;
+            }
+
+            if (gameObject.CompareTag(Constants.TAG_DOOR) && GameManager.Instance._editOpening)
+            {
+                SetSubState(new EditOpeningIn3DState<Door>(Camera.main, gameObject.GetComponentInParent<Door>()));
+                return;
+            }
+            else if (gameObject.CompareTag(Constants.TAG_WINDOW) && GameManager.Instance._editOpening)
+            {
+                SetSubState(new EditOpeningIn3DState<Window>(Camera.main, gameObject.GetComponentInParent<Window>()));
+                return;
             }
         }
     }

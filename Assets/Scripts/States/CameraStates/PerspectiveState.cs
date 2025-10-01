@@ -23,7 +23,6 @@ public class PerspectiveState : CameraState
 
         SetCameraOrientation();
 
-        // Return to perspective idle substate (keep your original call)
         GameManager.Instance.GetSubStateManager().SetPerspIdleState();
     }
 
@@ -124,7 +123,7 @@ public class PerspectiveState : CameraState
                 else
                     boxCollider.center = new Vector3(0, 0, 0);
 
-                Vector3 colliderSize = new Vector3(opening.Width - 0.5f, opening.Height, AppHelper._wallThickness);
+                Vector3 colliderSize = new Vector3(AppHelper._wallThickness, opening.Height, opening.Width);
 
                 boxCollider.size = colliderSize;
 

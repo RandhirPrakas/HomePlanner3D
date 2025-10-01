@@ -1,3 +1,4 @@
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class PlaceObjectState : ICameraSubState
@@ -22,8 +23,10 @@ public class PlaceObjectState : ICameraSubState
     {
         if (prefab == null)
         {
-            prefab = Resources.Load<GameObject>("Test/Cube");
+            GameManager.Instance.GetSubStateManager().SetOrthoIdleState();
+            return;
         }
+
         _orthoCam = orthoCam;
         _prefabToPlace = prefab;
         _placeableData = prefab.GetComponent<PlaceableObject>();
@@ -44,7 +47,8 @@ public class PlaceObjectState : ICameraSubState
         }
 
         _placeholderInstance = GameObject.Instantiate(_prefabToPlace);
-        _placeholderInstance.name = "Placement_Placeholder";
+        _placeholderInstance.name = $"{_prefabToPlace.name}";
+        _placeholderInstance.tag = Constants.TAG_PLACABLES;
 
         foreach (var col in _placeholderInstance.GetComponentsInChildren<Collider>())
         {
@@ -82,7 +86,8 @@ public class PlaceObjectState : ICameraSubState
         if (_isPlacementValid)
         {
             Debug.Log("Placing object at final position.");
-            GameObject.Instantiate(_prefabToPlace, _placeholderInstance.transform.position, _placeholderInstance.transform.rotation);
+            GameObject go = GameObject.Instantiate(_prefabToPlace, _placeholderInstance.transform.position, _placeholderInstance.transform.rotation);
+            go.tag = Constants.TAG_PLACABLES;
         }
         else
         {

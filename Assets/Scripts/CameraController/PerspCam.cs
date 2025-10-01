@@ -78,26 +78,37 @@ public class PerspCam : CameraManager
     public void ZoomCamera(float delta)
     {
         _targetDistance -= delta * _zoomSpeed;
-        _targetDistance = Mathf.Clamp(_targetDistance, 2f, 50f);
+        _targetDistance = Mathf.Clamp(_targetDistance, 15f, 50f);
     }
 
     public void UpdateCamera()
     {
         if (_cam == null || _cam.orthographic) return;
 
-        // Smooth interpolation
         _yaw = Mathf.Lerp(_yaw, _targetYaw, Time.deltaTime * _lerpSpeed);
         _pitch = Mathf.Lerp(_pitch, _targetPitch, Time.deltaTime * _lerpSpeed);
         _distance = Mathf.Lerp(_distance, _targetDistance, Time.deltaTime * _lerpSpeed);
 
-        // Clamp pitch
         _pitch = Mathf.Clamp(_pitch, _minPitch, _maxPitch);
 
-        // Orbit calculation
+
+
         Quaternion rotation = Quaternion.Euler(_pitch, _yaw, 0f);
         Vector3 offset = rotation * new Vector3(0, 0, -_distance);
         _cam.transform.position = _target + offset;
         _cam.transform.LookAt(_target);
+    }
+
+    public void PanCameraByDelta(Vector2 delta)
+    {
+        Vector3 forward = _cam.transform.forward;
+        forward.y = 0;
+        forward.Normalize();
+
+        Vector3 right = _cam.transform.right;
+
+        Vector3 panMovement = (-right * delta.x + -forward * delta.y) * _panSpeed * _distance * Time.deltaTime;
+        _target += panMovement;
     }
 
 }

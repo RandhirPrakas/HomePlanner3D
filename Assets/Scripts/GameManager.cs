@@ -14,6 +14,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private SubStateManager _subStateManager;
     [SerializeField] private OrthoCam _orthoCam;
     [SerializeField] private PerspCam _perspCam;
+    [SerializeField] private CatalogManager _catalogManager;
 
     public Wall _activeWall;
     #region Getter and Setter
@@ -37,6 +38,11 @@ public class GameManager : MonoBehaviour
     public CameraStateManager GetCameraStateManager()
     {
         return _cameraStateManager;
+    }
+
+    public CatalogManager GetCatalogManager()
+    {
+        return _catalogManager;
     }
 
     #endregion
@@ -70,6 +76,7 @@ public class GameManager : MonoBehaviour
     {
         _subStateManager.Start();
         Initialize();
+        LoadEssentialAssets();
     }
 
     private void Update()
@@ -117,4 +124,63 @@ public class GameManager : MonoBehaviour
 
     #endregion
 
+
+    // Load essential assets from the addressebles
+    
+    public void LoadEssentialAssets()
+    {
+        // Door Visualizer
+        AddressableLoader.LoadAndAssign<GameObject>(Constants.PATH_DOOR_VISUALIZER, go => Constants.DOOR_VISUALIZER = go);
+        
+        // Window Visualizer
+        AddressableLoader.LoadAndAssign<GameObject>(Constants.PATH_WINDOW_VISUALIZER, go => Constants.WINDOW_VISUALIZER = go);
+
+        // Object Distance Label Prefab
+        AddressableLoader.LoadAndAssign<GameObject>(Constants.PATH_OBJECT_DISTANCE_LABEL_PREFAB, go => Constants.OBJECT_DISTANCE_LABEL_PREFAB = go);
+
+
+        // Default Wall Length Label
+        AddressableLoader.LoadAndAssign<GameObject>(
+            Constants.PATH_WALL_LENGTH_LABEL,
+            go =>
+            {
+                Constants.DEFAULT_WALL_LENGTH_LABEL = go.GetComponentInChildren<TMP_Text>();
+            });
+
+        // Default LR Material
+        AddressableLoader.LoadAndAssign<Material>(Constants.PATH_DEFAULT_LR_MATERIAL, mat =>
+        {
+            Constants.DEFAULT_LINERENDERER_MATERIAL = mat;
+        });
+
+        // Default Floor Material
+        AddressableLoader.LoadAndAssign<Material>(Constants.PATH_DEFAULT_FLOOR_MATERIAL, mat => {
+            Constants.DEFAULT_FLOOR_MATERIAL = mat;
+        });
+
+        // Default Quad Material
+        AddressableLoader.LoadAndAssign<Material>(Constants.PATH_DEFAULT_QUAD_MATERIAL, mat => {
+            Constants.DEFAULT_QUAD_MATERIAL = mat;
+        });
+
+        // default hightlighted wall
+        AddressableLoader.LoadAndAssign<Material>(Constants.PATH_HIGHLIGHTED_WALL_MATERIAL, mat => {
+            Constants.DEFAULT_HIGHLIGHTED_WALL_MATERIAL= mat;
+        });
+
+        // Invalid Placement
+        AddressableLoader.LoadAndAssign<Material>(Constants.PATH_INVALID_PLACAMENT_MATERIAL, mat => {
+            Constants.DEFAULT_INVALID_PLACAMENT_MATERIAL = mat;
+        });
+
+        // valid Placement
+        AddressableLoader.LoadAndAssign<Material>(Constants.PATH_VALID_PLACAMENT_MATERIAL, mat => {
+            Constants.DEFAULT_VALID_PLACAMENT_MATERIAL = mat;
+        });
+
+        // Object Distance
+        AddressableLoader.LoadAndAssign<Material>(Constants.PATH_OBJECT_DISTANCE_LR_MATERIAL, mat => {
+            Constants.DEFAULT_OBJECT_DISTANCE_MATERIAL = mat;
+        });
+    }
 }
