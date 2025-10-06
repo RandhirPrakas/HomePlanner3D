@@ -19,8 +19,7 @@ public class Wall : MonoBehaviour
     public Material _material;
 
     // World-space label
-    [SerializeField] private TMP_Text _labelPrefab;
-    private TMP_Text _labelInstance;
+    private List<TMP_Text> _labelInstances = new List<TMP_Text>();
 
     // Colliders
     [SerializeField] private GameObject _colliderGO;
@@ -54,6 +53,7 @@ public class Wall : MonoBehaviour
     public Vector3 GetEndPosition() => new Vector3(_endWallPoint._position.x, 0, _endWallPoint._position.z);
 
     public List<Room> GetRoomParent() => _parentRooms;
+
     #endregion
 
 
@@ -66,7 +66,7 @@ public class Wall : MonoBehaviour
 
         InitLineRenderer();
         EnsureColliderGO();
-        CreateLabel();
+        //CreateLabel();
         UpdateFromPoints(true);
     }
 
@@ -104,7 +104,7 @@ public class Wall : MonoBehaviour
             _lineRenderer.SetPosition(1, end);
 
             _wallLength = Vector3.Distance(start, end);
-            UpdateLabel(start, end);
+            UpdateSegmentLabels();
             UpdateCollider(start, end);
             UpdateRoom();
 
@@ -124,50 +124,90 @@ public class Wall : MonoBehaviour
 
     #region Wall Label
 
-    private void CreateLabel()
+    private void UpdateSegmentLabels()
     {
-        if (_labelInstance != null)
-            Destroy(_labelInstance.gameObject);
+        Vector3 wallStart = GetStartPosition();
+        Vector3 wallEnd = GetEndPosition();
+        _allOpenings.Sort((a, b) => a.NormalizedPosition.CompareTo(b.NormalizedPosition));
 
-        
-            _labelPrefab = Constants.DEFAULT_WALL_LENGTH_LABEL;
-            _labelInstance = Instantiate(_labelPrefab, transform);
-            _labelInstance.alignment = TextAlignmentOptions.Center;
-            _labelInstance.fontSize = 10f;
-            UpdateLabel(GetStartPosition(), GetEndPosition());
-        
+        Vector3 currentSegmentStart = wallStart;
+        int labelIndex = 0;
+
+        foreach (Opening opening in _allOpenings)
+        {
+            if (opening == null) continue;
+
+            Vector3 openingStart = opening.OpeningStartPoint;
+            Vector3 openingEnd = opening.OpeningEndPoint;
+
+            UpdateSingleLabel(labelIndex, currentSegmentStart, openingStart);
+            labelIndex++;
+
+            currentSegmentStart = openingEnd;
+        }
+
+        UpdateSingleLabel(labelIndex, currentSegmentStart, wallEnd);
+        labelIndex++;
+
+        for (int i = labelIndex; i < _labelInstances.Count; i++)
+        {
+            _labelInstances[i].gameObject.SetActive(false);
+        }
     }
 
-    private void UpdateLabel(Vector3 start, Vector3 end)
+    private void UpdateSingleLabel(int index, Vector3 segmentStart, Vector3 segmentEnd)
     {
-        if (_labelInstance == null) return;
+        float segmentLength = Vector3.Distance(segmentStart, segmentEnd);
+        if (segmentLength < 0.1f)
+        {
+            if (index < _labelInstances.Count)
+            {
+                _labelInstances[index].gameObject.SetActive(false);
+            }
+            return;
+        }
 
-        Vector3 center = (start + end) * 0.5f;
-        float dirMul = AppHelper.IsClockwise(start, end) ? 1 : -1;
+        TMP_Text label;
+        // Create a new label instance if we don't have enough
+        if (index >= _labelInstances.Count)
+        {
+            label = Instantiate(Constants.DEFAULT_WALL_LENGTH_LABEL, transform);
+            _labelInstances.Add(label);
+        }
+        else
+        {
+            label = _labelInstances[index];
+        }
 
-        // Compute perpendicular direction on XZ plane
-        Vector3 wallDir = (end - start).normalized * dirMul;
-        Vector3 perpendicular = new Vector3(-wallDir.z, 0, wallDir.x);
+        label.gameObject.SetActive(true);
+        label.alignment = TextAlignmentOptions.Center;
+        label.fontSize = 10f;
 
-        float offsetDistance = 1f; // distance from wall
-        Vector3 labelPos = center + perpendicular * offsetDistance + Vector3.up * 0.5f;
+        // --- Position and Rotate the label (same logic as before, but for the segment) ---
+        Vector3 center = (segmentStart + segmentEnd) * 0.5f;
+        Vector3 wallDir = (segmentEnd - segmentStart).normalized;
 
-        _labelInstance.transform.position = labelPos;
+        float dirMul = AppHelper.IsClockwise(GetStartPosition(), GetEndPosition()) ? 1 : -1;
+        Vector3 perpendicular = new Vector3(-wallDir.z, 0, wallDir.x) * dirMul;
 
-        _labelInstance.rectTransform.sizeDelta = new Vector2(_wallLength, 1);
+        label.transform.position = center + perpendicular * 1f + Vector3.up * 0.5f;
+
         float angle = Mathf.Atan2(wallDir.z, wallDir.x) * Mathf.Rad2Deg;
-        _labelInstance.transform.rotation = Quaternion.Euler(90f, -angle, 0f);
+        label.transform.rotation = Quaternion.Euler(90f, -angle, 0f);
 
-        // We don't need to update the text since it seems you're using a separate text object
-         _labelInstance.text = _wallLength.ToString("F2") + " ft";
+        // --- Update Text and Width for the segment ---
+        label.rectTransform.sizeDelta = new Vector2(segmentLength, 1);
+        label.text = segmentLength.ToString("F2") + " ft";
     }
 
     public void DestroyLabel()
     {
-        if (_labelInstance != null)
-            Destroy(_labelInstance.gameObject);
-
-        _labelInstance = null;
+        foreach (var label in _labelInstances)
+        {
+            if (label != null)
+                Destroy(label.gameObject);
+        }
+        _labelInstances.Clear();
     }
 
     #endregion
@@ -228,17 +268,6 @@ public class Wall : MonoBehaviour
             room.UpdateFloor();
     }
 
-    public void DeleteWall()
-    {
-        foreach (var opening in new List<Opening>(_allOpenings))
-            opening.Detach();
-
-        if (WallManager.Instance._allWalls.Contains(this))
-            WallManager.Instance._allWalls.Remove(this);
-
-        DestroyLabel();
-        Destroy(gameObject);
-    }
 
     public void UpdateVisualsOnly()
     {
@@ -259,5 +288,9 @@ public class Wall : MonoBehaviour
     public void ClearParentRooms()
     {
         _parentRooms.Clear();
+    }
+    public void Refresh()
+    {
+        UpdateFromPoints();
     }
 }

@@ -406,7 +406,7 @@ public static class AppHelper
         wall.GetEndWallPoint().AddConnectedWallPoint(currentWallpoint);
     }
 
-    public static void SplitConnectedWall(Wall wall, WallPoint splitPoint, Transform strandedWall = null)
+    public static void SplitConnectedWall(Wall wall, WallPoint splitPoint, Transform strandedWall)
     {
         if (wall == null)
             return;
@@ -545,8 +545,6 @@ public static class AppHelper
             }
         }
         #endregion
-
-        // --- NEW, CORRECTED EXECUTION PHASE ---
 
         // Step 1: Handle modifications to EXISTING walls (T-Junctions).
         if (startPointWall != null)

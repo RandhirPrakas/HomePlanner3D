@@ -131,14 +131,37 @@ public class WallPointManager : MonoBehaviour
 
     public void RemoveStandaloneWallpoints()
     {
-        foreach(WallPoint wp in  _allWallPoints)
+        for (int i = _allWallPoints.Count - 1; i >= 0; i--)
         {
-            if(wp.GetConnectedWallPoints().Count == 0)
+            WallPoint wp = _allWallPoints[i];
+            if (wp.GetConnectedWallPoints().Count == 0)
             {
-                _allWallPoints.Remove(wp);
+                _allWallPoints.RemoveAt(i);
                 Destroy(wp.gameObject);
             }
         }
     }
 
+    public void RemoveStandaloneWallPointOnWall(WallPoint wp)
+    {
+        if (wp.GetConnectedWalls().Count != 2 || wp.GetConnectedWallPoints().Count != 2)
+            return;
+
+        WallPoint wp1 = wp.GetConnectedWallPoints()[0];
+        WallPoint wp2 = wp.GetConnectedWallPoints()[1];
+
+        Wall w1 = wp.GetConnectedWalls()[0];
+        Wall w2 = wp.GetConnectedWalls()[1];
+
+        if (!AppHelper.IsPointOnLineSegment(wp1._position, wp2._position, wp._position))
+            return;
+
+        DeleteWallPoint(wp);
+        Transform wallParent = GameObject.Find("StrandedWalls").transform;
+
+        WallManager.Instance.DeleteWall(w1);
+        WallManager.Instance.DeleteWall(w2);
+
+        AppHelper.ManageWallsAndWallPoints(wp1._position, wp2._position, wallParent);
+    }
 }

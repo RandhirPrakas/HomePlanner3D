@@ -9,7 +9,7 @@ public class Window : Opening
     {
         Height = 2f;
         Width = 2f;
-        _parentWall = wall;
+        ParentWall = wall;
         OpeningType = OpeningType.Window;
 
         OpeningPosition = wall.transform.InverseTransformPoint(worldPosition);

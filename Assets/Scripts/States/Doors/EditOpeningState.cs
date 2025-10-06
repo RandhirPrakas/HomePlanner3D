@@ -64,6 +64,12 @@ public class EditOpeningState<T> : ICameraSubState where T : Opening
         {
             OpeningManager.Instance.DeleteOpening(_selectedOpening);
         }
+
+        if (_editUI != null && SelectedOpening != null)
+        {
+            Vector3 zOffset = Vector3.forward * 3f;
+            _editUI.transform.position = SelectedOpening.transform.position + zOffset;
+        }
     }
     public void Init(Vector3 worldPos, Vector2 screenPos) { }
 
@@ -206,6 +212,9 @@ public class EditOpeningState<T> : ICameraSubState where T : Opening
         SelectedOpening.Width = newWidth;
         SelectedOpening.transform.position = _startOpeningPosition + widthDirection * (positionOffset * scaleCorrection);
         SelectedOpening.OpeningPosition = SelectedOpening.ParentWall.transform.InverseTransformPoint(SelectedOpening.transform.position);
+        SelectedOpening.CalculateAndSetNormalizedPosition(SelectedOpening.transform.position);
+        //SelectedOpening.UpdatePositionAndRotation();
+        SelectedOpening.ParentWall.Refresh();
     }
 
 
@@ -244,20 +253,25 @@ public class EditOpeningState<T> : ICameraSubState where T : Opening
         if (opening.ParentWall != nearest)
         {
             Wall oldWall = opening.ParentWall;
-            if (oldWall != null) oldWall._allOpenings.Remove(opening);
-
+            if (oldWall != null)
+            {
+                oldWall._allOpenings.Remove(opening);
+                oldWall.Refresh();
+            }
             opening.transform.SetParent(nearest.transform, true);
-            opening._parentWall = nearest;
+            opening.ParentWall = nearest;
 
             if (!nearest._allOpenings.Contains(opening))
                 nearest._allOpenings.Add(opening);
 
             SetOpeningRotation(opening, nearest);
         }
-
         proj.y = opening.transform.position.y;
         opening.transform.position = proj;
         opening.OpeningPosition = nearest.transform.InverseTransformPoint(proj);
+        //opening.UpdatePositionAndRotation();
+        opening.CalculateAndSetNormalizedPosition(proj);
+        nearest.Refresh();
     }
 
     private Wall FindNearestWall(Vector3 point, out Vector3 closestPoint, float snapThreshold = 5f)
@@ -305,8 +319,35 @@ public class EditOpeningState<T> : ICameraSubState where T : Opening
 
     public void OnPinch(float delta) => _orthoCam.ZoomCamera(delta);
 
-
     private void SetEditUI()
+    {
+        if (SelectedOpening == null) return;
+
+        // Calculate the initial position in WORLD space
+        Vector3 yOffset = Vector3.up * 1.5f;
+        Vector3 position = SelectedOpening.transform.position + yOffset;
+
+        if (_editUI == null)
+        {
+            // Instantiate the UI at the root of the scene (no parent)
+            _editUI = GameObject.Instantiate(
+                GameManager.Instance._uiManager._editUIPrefab,
+                position + Vector3.forward * 3f,
+                Quaternion.identity
+            );
+            _editUI.gameObject.name = "EditUI";
+        }
+        else
+        {  
+            // If reusing an existing UI, just update its position and rotation
+            _editUI.transform.position = position;
+            _editUI.transform.rotation = Quaternion.identity;
+        }
+
+        _editUI.Initialize(EditUIType.OpeningEdit);
+    }
+
+    /*private void SetEditUI()
     {
         if (SelectedOpening == null) return;
 
@@ -333,7 +374,7 @@ public class EditOpeningState<T> : ICameraSubState where T : Opening
         }
 
         _editUI.Initialize(EditUIType.OpeningEdit);
-    }
+    }*/
 
     private void DestroyEditUI()
     {

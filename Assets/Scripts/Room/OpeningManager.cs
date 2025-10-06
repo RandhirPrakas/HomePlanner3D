@@ -32,23 +32,29 @@ public class OpeningManager : MonoBehaviour
     /// </summary>
     public void TryReattachAll()
     {
-        foreach (Opening opening in _allOpenings)
+        const float maxReattachDistance = 1.0f;
+
+        for (int i = _allOpenings.Count - 1; i >= 0; i--)
         {
+            Opening opening = _allOpenings[i];
             if (opening == null) continue;
 
-            // Only stranded ones (no parent wall)
             if (opening.ParentWall == null)
             {
                 Wall nearestWall = WallManager.Instance.FindNearestWall(opening.transform.position, out Vector3 proj);
 
                 if (nearestWall != null)
                 {
-                    // Reinitialize on the new wall
-                    opening.Initialize(nearestWall, proj);
+                    proj.y = 3f;
+                    if (Vector3.Distance(opening.transform.position, proj) < maxReattachDistance)
+                    {
+                        opening.Initialize(nearestWall, proj);
+                    }
                 }
                 else
                 {
-                    Debug.LogWarning($"Opening {opening.name} could not find a nearby wall to attach to.");
+                    _allOpenings.RemoveAt(i);
+                    Destroy(opening.gameObject);
                 }
             }
         }
@@ -70,8 +76,9 @@ public class OpeningManager : MonoBehaviour
 
     public void DeleteOpening(Opening opening)
     {
-        opening._parentWall._allOpenings.Remove(opening);
+        opening.ParentWall._allOpenings.Remove(opening);
         _allOpenings.Remove(opening);
         Destroy(opening.gameObject);
     }
+
 }

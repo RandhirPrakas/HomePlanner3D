@@ -9,7 +9,7 @@ public class TouchManager : MonoBehaviour
     [SerializeField] private bool _isDragging = false;
     [SerializeField] private float _tapThresholdTime = 0.3f;
     [SerializeField] private float _dragThreshold = 5f;
-    [SerializeField] private float _pinchThreshold = 5f;
+    [SerializeField] private float _pinchThreshold = 10f;
     private void Update()
     {
         var currentSubState = GameManager.Instance.GetSubState();
@@ -20,14 +20,14 @@ public class TouchManager : MonoBehaviour
         if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
             return;
 
-        // --- Pinch simulation with mouse scroll wheel ---
+        // Pinch simulation with mouse scroll wheel
         float scroll = Input.GetAxis("Mouse ScrollWheel");
         if (Mathf.Abs(scroll) > 0.01f)
         {
             currentSubState.OnPinch(scroll * 100f);
         }
 
-        // --- Mouse drag handling ---
+        // Mouse drag handling
         if (Input.GetMouseButtonDown(0))
         {
             _initialTouchPosition = Input.mousePosition;

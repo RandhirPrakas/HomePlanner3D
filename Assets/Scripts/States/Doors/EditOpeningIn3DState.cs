@@ -180,7 +180,7 @@ public class EditOpeningIn3DState<T> : ICameraSubState where T : Opening
                         oldWall._allOpenings.Remove(SelectedOpening);
 
                     SelectedOpening.transform.SetParent(nearestWall.transform, true);
-                    SelectedOpening._parentWall = nearestWall;
+                    SelectedOpening.ParentWall = nearestWall;
 
                     if (!nearestWall._allOpenings.Contains(SelectedOpening))
                         nearestWall._allOpenings.Add(SelectedOpening);

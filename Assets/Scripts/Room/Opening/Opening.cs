@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 
 public abstract class Opening : MonoBehaviour
@@ -14,10 +15,25 @@ public abstract class Opening : MonoBehaviour
     [SerializeField] private GameObject _strandedOpenings;
     public OpeningVisualizer _openingVisualizer;
 
+    [SerializeField] private TMP_Text _widthLabel;
+
+
+    public Wall ParentWall
+    {
+        get => _parentWall;
+        set
+        {
+            if (_parentWall == value) return;
+            _parentWall = value;
+        }
+    }
+    public Vector3? _lastKnownWallStart = null;
+    public Vector3? _lastKnownWallEnd = null;
+
     // Tests
     [SerializeField] private Vector3 _openingStart, _openingEnd;
 
-    public Vector3 OpeningStart 
+    public Vector3 OpeningStart
     {
         get => _openingStart;
         set
@@ -32,7 +48,7 @@ public abstract class Opening : MonoBehaviour
         get => _openingEnd;
         set
         {
-            if(_openingEnd == value) return;
+            if (_openingEnd == value) return;
             _openingEnd = value;
         }
     }
@@ -55,12 +71,31 @@ public abstract class Opening : MonoBehaviour
             {
                 _openingVisualizer.UpdateWidth(_width);
             }
+            UpdateWidthLabel();
         }
     }
     public float Height { get => _height; set => _height = value; }
     public Vector3 OpeningPosition { get => _openingPosition; set => _openingPosition = value; }
     public OpeningType OpeningType { get => _openingType; set => _openingType = value; }
-    public Wall ParentWall => _parentWall;
+    public Vector3 OpeningStartPoint
+    {
+        get
+        {
+            if (ParentWall == null) return transform.position;
+            Vector3 wallDir = (ParentWall.GetEndPosition() - ParentWall.GetStartPosition()).normalized;
+            return transform.position - wallDir * (Width / 2f);
+        }
+    }
+
+    public Vector3 OpeningEndPoint
+    {
+        get
+        {
+            if (ParentWall == null) return transform.position;
+            Vector3 wallDir = (ParentWall.GetEndPosition() - ParentWall.GetStartPosition()).normalized;
+            return transform.position + wallDir * (Width / 2f);
+        }
+    }
 
     #endregion
 
@@ -68,15 +103,28 @@ public abstract class Opening : MonoBehaviour
     {
         _strandedOpenings = GameObject.Find("StrandedOpenings");
     }
-    public abstract void Initialize(Wall wall, Vector3 worldPosition);
-
-    public void Detach()
+    public virtual void Initialize(Wall wall, Vector3 worldPosition)
     {
-        if (_parentWall != null)
+        this.ParentWall = wall;
+        this.transform.SetParent(wall.transform);
+
+        if (Constants.DEFAULT_WALL_LENGTH_LABEL != null && _widthLabel == null)
         {
-            _parentWall._allOpenings.Remove(this);
-            _lastWall = _parentWall;
-            _parentWall = null;
+            GameObject labelGO = Instantiate(Constants.DEFAULT_WALL_LENGTH_LABEL, transform).gameObject;
+
+            _widthLabel = labelGO.GetComponent<TMP_Text>();
+        }
+    }
+
+    public void Detach(Vector3 lastStart, Vector3 lastEnd)
+    {
+        if (ParentWall != null)
+        {
+            ParentWall._allOpenings.Remove(this);
+            _lastWall = ParentWall;
+            ParentWall = null;
+            _lastKnownWallStart = lastStart;
+            _lastKnownWallEnd = lastEnd;
         }
 
         // Move into stranded container
@@ -86,12 +134,12 @@ public abstract class Opening : MonoBehaviour
         }
     }
 
-    protected void CalculateAndSetNormalizedPosition(Vector3 worldPosition)
+    public void CalculateAndSetNormalizedPosition(Vector3 worldPosition)
     {
-        if (_parentWall == null) return;
+        if (ParentWall == null) return;
 
-        Vector3 wallStart = _parentWall.GetStartPosition();
-        Vector3 wallEnd = _parentWall.GetEndPosition();
+        Vector3 wallStart = ParentWall.GetStartPosition();
+        Vector3 wallEnd = ParentWall.GetEndPosition();
 
         Vector3 wallVector = wallEnd - wallStart;
         Vector3 openingVector = worldPosition - wallStart;
@@ -111,9 +159,9 @@ public abstract class Opening : MonoBehaviour
 
     public void UpdatePositionAndRotation()
     {
-        if (_parentWall == null) return;
+        if (ParentWall == null) return;
 
-        Vector3 wallStart = _parentWall.GetStartPosition();
+        Vector3 wallStart = ParentWall.GetStartPosition();
         Vector3 wallEnd = _parentWall.GetEndPosition();
         Vector3 wallVector = wallEnd - wallStart;
         Vector3 newWorldPosition = wallStart + wallVector * _normalizedPosition;
@@ -135,6 +183,33 @@ public abstract class Opening : MonoBehaviour
         }
     }
 
+    public void UpdateWidthLabel()
+    {
+        if (_widthLabel == null) return;
+
+        _widthLabel.text = _width.ToString("F2") + " ft";
+        _widthLabel.rectTransform.sizeDelta = new Vector2(_width, 1);
+
+        if (ParentWall != null)
+        {
+            Vector3 wallDir = (ParentWall.GetEndPosition() - ParentWall.GetStartPosition()).normalized;
+            float dirMul = AppHelper.IsClockwise(ParentWall.GetStartPosition(), ParentWall.GetEndPosition()) ? 1 : -1;
+            Vector3 perpendicular = new Vector3(-wallDir.z, 0, wallDir.x) * dirMul;
+
+            float offsetDistance = 1f;
+            float heightOffset = 0.5f;
+            Vector3 worldOffset = (perpendicular * offsetDistance) + (Vector3.up * heightOffset);
+
+            _widthLabel.transform.localPosition = transform.InverseTransformDirection(worldOffset);
+
+            _widthLabel.transform.localRotation = Quaternion.Euler(90f, -90f, 0f);
+        }
+        else
+        {
+            // Fallback for a stranded opening
+            _widthLabel.transform.localPosition = Vector3.down * 0.5f;
+        }
+    }
 
     /*public void ShowResizeHandles(GameObject handlePrefab)
     {

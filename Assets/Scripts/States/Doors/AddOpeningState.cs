@@ -75,8 +75,7 @@ public class AddOpeningState<T> : ICameraSubState where T : Opening
         FindNearestWall(worldPos, out proj);
         proj.y = 3f;
 
-        if (!AppHelper.CanPlaceOpening
-            <T>(_targetWall, proj))
+        if (!AppHelper.CanPlaceOpening<T>(_targetWall, proj))
         {
             Debug.Log($"Cannot place {typeof(T).Name}, too close to another opening or wall end.");
             return;

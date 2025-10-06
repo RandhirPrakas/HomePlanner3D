@@ -67,7 +67,7 @@ public class WallManager : MonoBehaviour
                 OpeningManager.Instance.DeleteOpening(opening);
             }
             else
-                opening.Detach();
+                opening.Detach(wall.GetStartPosition(), wall.GetEndPosition());
         }
 
         // Disconnect endpoints 
@@ -93,6 +93,8 @@ public class WallManager : MonoBehaviour
         _allWalls.RemoveAll(w => w == null);
 
         // Fire event
+        WallPointManager.Instance.RemoveStandaloneWallPointOnWall(start);
+        WallPointManager.Instance.RemoveStandaloneWallPointOnWall(end);
         AppEventHandler.InvokeOnWallCreation();
     }
 
