@@ -15,7 +15,7 @@ public class ModelLoaderPanel : MonoBehaviour
     [SerializeField] private Button _modelBackBtn;
     [SerializeField] private Button _modelCategoryBackBtn;
 
-    public TMP_Text _modelTitle; // type chair, Bed etcs
+    public TMP_Text _modelTitle;
 
 
     [Header("UI Elements")]

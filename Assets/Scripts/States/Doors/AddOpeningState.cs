@@ -81,7 +81,14 @@ public class AddOpeningState<T> : ICameraSubState where T : Opening
             return;
         }
 
-        GameObject visualGO = new GameObject(typeof(T).Name);
+        GameObject visualGO = null;
+        if (typeof(T) == typeof(Door))
+            visualGO = GameObject.Instantiate(Constants.DEFAULT_DOOR);
+        else if (typeof(T) == typeof(Window))
+            visualGO = GameObject.Instantiate(Constants.DEFAULT_WINDOW);
+        else
+            return;
+        visualGO.name = typeof(T).Name;
         visualGO.transform.position = proj;
         visualGO.transform.SetParent(_targetWall.transform);
         visualGO.tag = typeof(T).Name;
@@ -93,6 +100,10 @@ public class AddOpeningState<T> : ICameraSubState where T : Opening
         visualizer.SetDefaultColor();
         SetOpeningRotation(opening.OpeningVisual.gameObject, _targetWall);
         Debug.Log($"{typeof(T).Name} placed on {_targetWall.name} at {proj}");
+
+        // SetMeshRenderer
+        opening.OpeningRenderer = visualGO.GetComponentInChildren<MeshRenderer>();
+        opening._openingRedererGo = opening.OpeningRenderer.gameObject;
 
         if (_preview != null)
         {

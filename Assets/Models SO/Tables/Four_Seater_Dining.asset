@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8fc41409a02e230478dd8ecb671715ae, type: 3}
+  m_Name: Four_Seater_Dining
+  m_EditorClassIdentifier: 
+  itemName: Four_Seated_DiningTable
+  category: 1
+  thumbnailReference:
+    m_AssetGUID: 674a3084147d9fc45843f09d3158b1e1
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_EditorAssetChanged: 0
+  modelPrefabReference:
+    m_AssetGUID: 7b3013339b4b8f5489a7cdc87a925381
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_EditorAssetChanged: 0

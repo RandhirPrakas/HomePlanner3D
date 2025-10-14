@@ -182,5 +182,17 @@ public class GameManager : MonoBehaviour
         AddressableLoader.LoadAndAssign<Material>(Constants.PATH_OBJECT_DISTANCE_LR_MATERIAL, mat => {
             Constants.DEFAULT_OBJECT_DISTANCE_MATERIAL = mat;
         });
+
+        // DefaultDoor
+        AddressableLoader.LoadAndAssign<GameObject>(Constants.PATH_DEFAULT_DOOR, go =>
+        {
+            Constants.DEFAULT_DOOR = go;
+        });
+
+        // Default Window
+        AddressableLoader.LoadAndAssign<GameObject>(Constants.PATH_DEFAULT_Window, go =>
+        {
+            Constants.DEFAULT_WINDOW = go;
+        });
     }
 }

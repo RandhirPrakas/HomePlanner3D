@@ -9,7 +9,7 @@ public class WallManager : MonoBehaviour
 
     public List<Wall> _allWalls = new List<Wall>();
 
-    public static int _wallIndex = 0;
+    public static int WallCountIndex = 0;
 
     public Wall _currentSelectedWall;
 
@@ -52,11 +52,11 @@ public class WallManager : MonoBehaviour
         OpeningManager.Instance.TryReattachAll();
     }
 
-    public void DeleteWall(Wall wall, bool deleteOpenings = false)
+    public void DeleteWall(Wall wall, bool deleteOpenings = false, bool refresh = true)
     {
         if (wall == null) return;
 
-        _wallIndex--;
+        WallCountIndex--;
         // Clean up openings safely
         foreach (var opening in new List<Opening>(wall._allOpenings))
         {
@@ -92,10 +92,13 @@ public class WallManager : MonoBehaviour
         // Clean out any null references
         _allWalls.RemoveAll(w => w == null);
 
-        // Fire event
         WallPointManager.Instance.RemoveStandaloneWallPointOnWall(start);
         WallPointManager.Instance.RemoveStandaloneWallPointOnWall(end);
-        AppEventHandler.InvokeOnWallCreation();
+        //WallPointManager.Instance.RemoveAllStandalonePointOnwall();
+
+        // Fire event if applicable
+        if(refresh)
+            AppEventHandler.InvokeOnWallCreation();
     }
 
     public Wall FindNearestWall(Vector3 point, out Vector3 closestPoint, float snapThreshold = 5f)
@@ -147,6 +150,19 @@ public class WallManager : MonoBehaviour
         }
 
         return bounds;
+    }
+
+    public void CreateWallWithWallPoints(WallPoint start, WallPoint end, Transform wallParent)
+    {
+        foreach(Wall wall in _allWalls)
+        {
+            if((wall.GetStartWallPoint() == start && wall.GetEndWallPoint() == end) || (wall.GetStartWallPoint() == end && wall.GetEndWallPoint() == start))
+            {
+                return;
+            }
+        }
+
+        AppHelper.DrawWall(start, end, wallParent);
     }
 
 }

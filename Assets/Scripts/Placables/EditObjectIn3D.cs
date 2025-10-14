@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 public class EditObjectIn3D : ICameraSubState
@@ -44,8 +45,6 @@ public class EditObjectIn3D : ICameraSubState
         _validPlacementMaterial = Constants.DEFAULT_VALID_PLACAMENT_MATERIAL;
         _invalidPlacementMaterial = Constants.DEFAULT_INVALID_PLACAMENT_MATERIAL;
 
-        // Instantiate the visualizer, which handles its own setup.
-        //_measurementVisualizer = new MeasurementVisualizer();
     }
 
     public void Enter()
@@ -104,11 +103,20 @@ public class EditObjectIn3D : ICameraSubState
 
         if (Input.GetKeyDown(KeyCode.UpArrow))
         {
-            IncreaseSize();
+            ChangeSize(0.5f);
         }
         else if (Input.GetKeyDown(KeyCode.DownArrow))
         {
-            DecreaseSize();
+            ChangeSize(-0.5f);
+        }
+
+        if(Input.GetKeyDown(KeyCode.LeftArrow))
+        {
+            RotateObject(-30);
+        }
+        else if(Input.GetKeyDown(KeyCode.RightArrow))
+        {
+            RotateObject(30);
         }
     }
 
@@ -134,7 +142,6 @@ public class EditObjectIn3D : ICameraSubState
 
         UpdatePlacementFeedback(foundValidSurface);
 
-        //_measurementVisualizer.UpdateVisuals(_objectCollider);
     }
 
     private bool TryPlaceOnValidSurface(Ray ray)
@@ -178,7 +185,7 @@ public class EditObjectIn3D : ICameraSubState
 
     private void UpdatePlacementFeedback(bool foundValidSurface)
     {
-        if (foundValidSurface == _isPlacementValid) return; // No change needed
+        if (foundValidSurface == _isPlacementValid) return;
 
         _isPlacementValid = foundValidSurface;
         SetFeedbackMaterial(_isPlacementValid ? _validPlacementMaterial : _invalidPlacementMaterial);
@@ -222,17 +229,23 @@ public class EditObjectIn3D : ICameraSubState
         SelectedObject.transform.position = new Vector3(SelectedObject.transform.position.x, SelectedObject.transform.localScale.y / 2, SelectedObject.transform.position.z);
     }
 
-    private void IncreaseSize()
+    private void ChangeSize(float factor)
     {
         if (SelectedObject == null) return;
-        SelectedObject.transform.localScale += SelectedObject.transform.localScale * 0.5f;
+
+        Debug.Log("Changing Size");
+        SelectedObject.transform.localScale += SelectedObject.transform.localScale * factor;
         GroundObject();
     }
 
-    private void DecreaseSize()
+
+    private void RotateObject(float amount)
     {
-        if (SelectedObject == null) return;
-        SelectedObject.transform.localScale -= SelectedObject.transform.localScale * 0.5f;
+        if (SelectedObject == null)
+            return;
+
+        Debug.Log("Rotate this object");
+        SelectedObject.transform.Rotate(0, amount, 0);
         GroundObject();
     }
 }

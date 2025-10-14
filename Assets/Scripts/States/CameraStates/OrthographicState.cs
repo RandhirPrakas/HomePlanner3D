@@ -70,7 +70,10 @@ public class OrthographicState : CameraState
         foreach(Opening opening in OpeningManager.Instance.GetAllOpenings())
         {
             if(opening.GetComponent<BoxCollider>()!= null)
+            {
                 opening.GetComponent<BoxCollider>().enabled = false;
+                DisableOpeningMeshRenderer(opening);
+            }
         }
     }
 
@@ -84,5 +87,11 @@ public class OrthographicState : CameraState
             }
             wall.WallSegmentColliders.Clear();
         }
+    }
+
+    private void DisableOpeningMeshRenderer(Opening opening)
+    {
+        if (opening.OpeningRenderer != null)
+            opening.OpeningRenderer.enabled = false;
     }
 }

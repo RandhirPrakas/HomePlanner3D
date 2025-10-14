@@ -237,6 +237,7 @@ public class MoveWallState : ICameraSubState
     {
         if (ActiveWall == null) return;
 
+        Debug.Log("<color=green>Snapping On End of wallmovement</color>");
         WallPoint startPoint = ActiveWall.StartWallPoint;
         WallPoint endPoint = ActiveWall.EndWallPoint;
 

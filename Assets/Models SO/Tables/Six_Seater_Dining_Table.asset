@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8fc41409a02e230478dd8ecb671715ae, type: 3}
-  m_Name: Table_1
+  m_Name: Six_Seater_Dining_Table
   m_EditorClassIdentifier: 
-  itemName: Table_1
+  itemName: Six_Seater_Dining_Table_01
   category: 1
   thumbnailReference:
     m_AssetGUID: 67d60b4b8fb8a7349a3818286e7053a9
@@ -20,7 +20,7 @@ MonoBehaviour:
     m_SubObjectType: 
     m_EditorAssetChanged: 0
   modelPrefabReference:
-    m_AssetGUID: 7b960497a9ab8504a9a9adbc8bb50dac
+    m_AssetGUID: d2975ca2d99a1744892d6353baf254ac
     m_SubObjectName: 
     m_SubObjectType: 
     m_EditorAssetChanged: 0

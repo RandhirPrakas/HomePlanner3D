@@ -154,6 +154,9 @@ public class QuadGenerator : MonoBehaviour
     private bool PointInTriangle(Vector2 P, Vector2 A, Vector2 B, Vector2 C)
     {
         float area = 0.5f * (-B.y * C.x + A.y * (-B.x + C.x) + A.x * (B.y - C.y) + B.x * C.y);
+
+        if (Mathf.Abs(area) < Mathf.Epsilon)
+            return false;
         float s = 1 / (2 * area) * (A.y * C.x - A.x * C.y + (C.y - A.y) * P.x + (A.x - C.x) * P.y);
         float t = 1 / (2 * area) * (A.x * B.y - A.y * B.x + (A.y - B.y) * P.x + (B.x - A.x) * P.y);
         float u = 1 - s - t;

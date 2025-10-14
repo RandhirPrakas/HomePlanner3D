@@ -11,7 +11,7 @@ public static class AppHelper
 
     public static readonly float _minimumWallLength = 4f;
     public static readonly float _minimumWallHeight = 5f;
-    public static readonly float _wallThickness = 1f;
+    public static readonly float _wallThickness = 0.35f;
     public static readonly float _wallHeight = 7f;
     public static readonly float _wallColliderThickness = 1f;
 
@@ -251,8 +251,10 @@ public static class AppHelper
         if (ab == Vector2.zero)
             return p2 == a2;
 
+        const float tolerance = 0.0001f;
+
         // Collinearity check in 2D: cross product is a scalar
-        if (Mathf.Abs(ab.x * ap.y - ab.y * ap.x) > Mathf.Epsilon)
+        if (Mathf.Abs(ab.x * ap.y - ab.y * ap.x) > tolerance)
             return false;
 
         // Check if projection is within the segment
@@ -421,7 +423,7 @@ public static class AppHelper
 
     public static Wall DrawWall(WallPoint startPoint, WallPoint endPoint, Transform strandedWalls = null)
     {
-        GameObject wallGO = new GameObject($"Wall_{WallManager._wallIndex++}");
+        GameObject wallGO = new GameObject($"Wall_{WallManager.WallCountIndex++}");
         Wall wallComp = wallGO.AddComponent<Wall>();
         wallGO.transform.SetParent(strandedWalls);
         wallComp.SetStartAndEndPosition(startPoint, endPoint);
@@ -613,6 +615,22 @@ public static class AppHelper
             }
         }
         return false;
+    }
+
+    public static bool PointInPolygon(Vector3 point, List<WallPoint> polygon)
+    {
+        bool inside = false;
+        for (int i = 0, j = polygon.Count - 1; i < polygon.Count; j = i++)
+        {
+            Vector3 pi = polygon[i]._position;
+            Vector3 pj = polygon[j]._position;
+            if (((pi.z > point.z) != (pj.z > point.z)) &&
+                (point.x < (pj.x - pi.x) * (point.z - pi.z) / (pj.z - pi.z) + pi.x))
+            {
+                inside = !inside;
+            }
+        }
+        return inside;
     }
 
     #endregion

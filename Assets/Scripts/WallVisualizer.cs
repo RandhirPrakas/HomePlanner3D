@@ -27,7 +27,7 @@ public class WallVisualizer : MonoBehaviour
         _currentSegments.Clear();
 
         if (_wallData == null || _segmentPrefab == null) return;
-
+         
         // Get the defining points of the wall
         Vector3 wallStart = _wallData.StartWallPoint._position;
         Vector3 wallEnd = _wallData.EndWallPoint._position;
@@ -36,7 +36,7 @@ public class WallVisualizer : MonoBehaviour
 
         // Create a sorted list of "events" along the wall
         var eventPoints = new List<(float normalizedPos, bool isOpening)>();
-        eventPoints.Add((0, false)); // Wall start
+        eventPoints.Add((0, false));
 
         // Sort openings by their position along the wall
         var sortedOpenings = _wallData._allOpenings.OrderBy(o => o.NormalizedPosition);
@@ -44,8 +44,8 @@ public class WallVisualizer : MonoBehaviour
         foreach (var opening in sortedOpenings)
         {
             float halfWidthNormalized = (opening.Width / 2f) / wallLength;
-            eventPoints.Add((opening.NormalizedPosition - halfWidthNormalized, true));  // Opening start
-            eventPoints.Add((opening.NormalizedPosition + halfWidthNormalized, false)); // Opening end
+            eventPoints.Add((opening.NormalizedPosition - halfWidthNormalized, true));   
+            eventPoints.Add((opening.NormalizedPosition + halfWidthNormalized, false));
         }
 
         eventPoints.Add((1, false)); // Wall end

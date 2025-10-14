@@ -277,12 +277,24 @@ public class Wall : MonoBehaviour
         Vector3 start = _startWallPoint._position;
         Vector3 end = _endWallPoint._position;
 
-        // The Y-offset should probably be a constant or serialized field
         start.y = 0.5f;
         end.y = 0.5f;
 
         _lineRenderer.SetPosition(0, start);
         _lineRenderer.SetPosition(1, end);
+    }
+
+    public void RemoveParentRoom(Room room)
+    {
+        if (_parentRooms.Contains(room))
+        {
+            _parentRooms.Remove(room);
+        }
+    }
+
+    public int GetParentRoomCount()
+    {
+        return _parentRooms.Count;
     }
 
     public void ClearParentRooms()

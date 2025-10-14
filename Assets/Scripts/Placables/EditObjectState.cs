@@ -112,12 +112,17 @@ public class EditObjectState : ICameraSubState
 
         if (Input.GetKeyDown(KeyCode.UpArrow))
         {
-            IncreaseSize();
+            ChangeSize(0.5f);
         }
         else if (Input.GetKeyDown(KeyCode.DownArrow))
         {
-            DecreaseSize();
+            ChangeSize(-0.5f);
         }
+
+        if (Input.GetKeyDown(KeyCode.LeftArrow))
+            RotateObject(-30f);
+        else if (Input.GetKeyDown(KeyCode.RightArrow))
+            RotateObject(30f);
     }
 
     public void OnPinch(float delta)
@@ -209,17 +214,21 @@ public class EditObjectState : ICameraSubState
         SelectedObject.transform.position = new Vector3(SelectedObject.transform.position.x, SelectedObject.transform.localScale.y / 2, SelectedObject.transform.position.z);
     }
 
-    private void IncreaseSize()
+    private void ChangeSize(float amount)
     {
         if (SelectedObject == null) return;
-        SelectedObject.transform.localScale += SelectedObject.transform.localScale * 0.5f;
+        SelectedObject.transform.localScale += SelectedObject.transform.localScale * amount;
         GroundObject();
     }
 
-    private void DecreaseSize()
+
+    private void RotateObject(float amount)
     {
-        if (SelectedObject == null) return;
-        SelectedObject.transform.localScale -= SelectedObject.transform.localScale * 0.5f;
+        if (SelectedObject == null)
+            return;
+
+        Debug.Log("Rotate this object");
+        SelectedObject.transform.Rotate(0, amount, 0);
         GroundObject();
     }
 

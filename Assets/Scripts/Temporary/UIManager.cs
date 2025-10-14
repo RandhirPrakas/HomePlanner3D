@@ -58,6 +58,7 @@ public class UIManager : MonoBehaviour
             Destroy(wp.gameObject);
         }
         WallPointManager.Instance._allWallPoints.Clear();
+        WallPointManager.WallPointCountIndex = 0;
 
         foreach (Opening opening in OpeningManager.Instance.GetAllOpenings())
         {
@@ -70,13 +71,14 @@ public class UIManager : MonoBehaviour
             Destroy(wall.gameObject);
         }
         WallManager.Instance._allWalls.Clear();
+        WallManager.WallCountIndex = 0;
 
         foreach (Room room in RoomManager.Instance._allRooms)
         {
             room.RemoveRoom();
         }
         RoomManager.Instance._allRooms.Clear();
-        GameManager.Instance.GetSubStateManager().SetOrthoIdleState();
+        GameManager.Instance.GetCameraStateManager().SetOrthographicState();
     }
 
     public void SetButtonActive(Button btn, bool val)

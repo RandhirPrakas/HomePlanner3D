@@ -7,7 +7,7 @@ public class WallPointManager : MonoBehaviour
     public static WallPointManager Instance;
 
     public List<WallPoint> _allWallPoints = new List<WallPoint>();
-
+    public static int WallPointCountIndex = 0;
     public WallPoint _currentActiveWallpoint;
     private void Awake()
     {
@@ -31,7 +31,7 @@ public class WallPointManager : MonoBehaviour
             
         }
 
-        GameObject pointGO = new GameObject(string.IsNullOrEmpty(name) ? $"WallPoint_{RoomManager.WallPointCountIndex++}" : name);
+        GameObject pointGO = new GameObject(string.IsNullOrEmpty(name) ? $"WallPoint_{WallPointCountIndex++}" : name);
         WallPoint wallPoint = pointGO.AddComponent<WallPoint>();
         wallPoint.Initialize(position);
         _allWallPoints.Add(wallPoint);
@@ -123,6 +123,7 @@ public class WallPointManager : MonoBehaviour
         }
 
         _allWallPoints.Remove(wallPoint);
+        WallPointCountIndex--;
         Destroy(wallPoint._activeSphere);
         Destroy(wallPoint.gameObject);
 
@@ -142,11 +143,20 @@ public class WallPointManager : MonoBehaviour
         }
     }
 
+    public void RemoveAllStandalonePointOnwall()
+    {
+        foreach(WallPoint wp in new List<WallPoint>(_allWallPoints))
+        {
+            RemoveStandaloneWallPointOnWall(wp);
+        }
+    }
+
     public void RemoveStandaloneWallPointOnWall(WallPoint wp)
     {
         if (wp.GetConnectedWalls().Count != 2 || wp.GetConnectedWallPoints().Count != 2)
             return;
 
+        Debug.Log("<color=blue>deleting point to merge line</color>");
         WallPoint wp1 = wp.GetConnectedWallPoints()[0];
         WallPoint wp2 = wp.GetConnectedWallPoints()[1];
 

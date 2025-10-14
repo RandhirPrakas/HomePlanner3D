@@ -11,6 +11,7 @@ public static class Constants
     public static string TAG_WALL = "Wall";
     public static string TAG_PLACABLES = "Placables";
     public static string TAG_ROOM = "Room";
+    public static string TAG_RESIZE_HANDLE = "ResizeHandle";
 
     #endregion
 
@@ -37,6 +38,9 @@ public static class Constants
     public static string PATH_OBJECT_DISTANCE_LR_MATERIAL = "Assets/Prefabs/ProceduralMaterials/ObjectDistanceLrMat.mat";
 
     public static string PATH_WALL_LENGTH_LABEL = "Assets/Prefabs/Wall/WallLengthLabel.prefab";
+
+    public static string PATH_DEFAULT_DOOR = "Assets/Prefabs/Opening/Door/DefaultDoor.prefab";
+    public static string PATH_DEFAULT_Window= "Assets/Prefabs/Opening/Door/DefaultWindow.prefab";
     #endregion
 
     public static Material DEFAULT_LINERENDERER_MATERIAL;
@@ -52,4 +56,6 @@ public static class Constants
     public static GameObject DOOR_VISUALIZER;
     public static GameObject WINDOW_VISUALIZER;
     public static GameObject OBJECT_DISTANCE_LABEL_PREFAB;
+    public static GameObject DEFAULT_DOOR;
+    public static GameObject DEFAULT_WINDOW;
 }

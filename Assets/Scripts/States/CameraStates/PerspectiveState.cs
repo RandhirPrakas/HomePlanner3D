@@ -18,7 +18,6 @@ public class PerspectiveState : CameraState
 
         ThreeD_Settings();
 
-        // Generate colliders for openings (doors/windows)
         GenerateOpeningColliders();
 
         SetCameraOrientation();
@@ -78,7 +77,6 @@ public class PerspectiveState : CameraState
         {
             if (wall == null) continue;
 
-            // Use the centralized generator that understands openings
             WallMeshGenerator.GenerateWallWithOpenings(wall);
         }
     }
@@ -127,6 +125,8 @@ public class PerspectiveState : CameraState
 
                 boxCollider.size = colliderSize;
 
+                opening._boxCollider = boxCollider;
+                EnableOpeningMeshRenderer(opening);
             }
         }
     }
@@ -141,5 +141,11 @@ public class PerspectiveState : CameraState
             if (opening == null) continue;
             if (opening.OpeningVisual != null) opening.OpeningVisual.gameObject.SetActive(false);
         }
+    }
+
+    private void EnableOpeningMeshRenderer(Opening opening)
+    {
+        if (opening.OpeningRenderer != null)
+            opening.OpeningRenderer.enabled = true;
     }
 }

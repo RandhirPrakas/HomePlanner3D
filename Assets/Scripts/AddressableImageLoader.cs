@@ -17,7 +17,7 @@ public class AddressableImageLoader : MonoBehaviour
 
     public void LoadImage(AssetReferenceSprite spriteRef)
     {
-        if (spriteRef == null)
+         if (spriteRef == null)
         {
             // This check is good, keep it.
             return;
