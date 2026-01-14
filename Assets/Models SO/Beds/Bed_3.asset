@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8fc41409a02e230478dd8ecb671715ae, type: 3}
+  m_Name: Bed_3
+  m_EditorClassIdentifier: 
+  itemName: Bed_3
+  category: 2
+  thumbnailReference:
+    m_AssetGUID: b99a4b4e9c6523046823ffeee1878291
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_EditorAssetChanged: 0
+  modelPrefabReference:
+    m_AssetGUID: 2f2822dd29df97442a9b5c9ef5c20be7
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_EditorAssetChanged: 0

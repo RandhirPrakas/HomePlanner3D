@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8fc41409a02e230478dd8ecb671715ae, type: 3}
+  m_Name: Dinning_SixSeater_1
+  m_EditorClassIdentifier: 
+  itemName: Dinning_SixSeater_1
+  category: 1
+  thumbnailReference:
+    m_AssetGUID: b24cb77cc5d2fae47a9ea0f0701a1d4f
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_EditorAssetChanged: 0
+  modelPrefabReference:
+    m_AssetGUID: 31beeba7fee2a0b40a9c9acb20dbcebe
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_EditorAssetChanged: 0

@@ -10,15 +10,15 @@ public class UIManager : MonoBehaviour
 
     [SerializeField] private Button _clearButton;
     [SerializeField] private Button _drawButton;
-    [SerializeField] private Button _toggleButton;
+    [SerializeField] private Button _2D3DModeSwitchButton;
     [SerializeField] private Button _addDoorButton;
     [SerializeField] private Button _addWindowButton;
     [SerializeField] private Button _addModuleButton;
 
     public EditUI _editUIPrefab;
-
     public GameObject _modelSelectionUI;
-
+    // This prefab refer to UI comes on top of 3D Object placed.
+    public WorldCanvasHandler worldCanvasHandlerPlacedObject;
 
     #region Model Items
     public PlacementManager _placementManager;
@@ -28,7 +28,7 @@ public class UIManager : MonoBehaviour
     private void OnEnable()
     {
         _modelSelectionUI.SetActive(false);
-        _toggleButton.onClick.AddListener(() => ToggleCamerStates());
+        _2D3DModeSwitchButton.onClick.AddListener(() => ToggleCamerStates());
         _clearButton.onClick.AddListener(() => ResetSceneAndCreateNewRoom());
         _drawButton.onClick.AddListener(() => GameManager.Instance.SetSubState(new DrawState(GameManager.Instance.GetOrthoCamera())));
         _addDoorButton.onClick.AddListener(() => GameManager.Instance.SetSubState(new AddOpeningState<Door>(GameManager.Instance.GetOrthoCamera(), Constants.DOOR_VISUALIZER)));
@@ -46,7 +46,7 @@ public class UIManager : MonoBehaviour
         _drawButton.onClick.RemoveAllListeners();
         _clearButton.onClick.RemoveAllListeners();
         _addDoorButton.onClick.RemoveAllListeners();
-        _toggleButton.onClick.RemoveAllListeners();
+        _2D3DModeSwitchButton.onClick.RemoveAllListeners();
         _addWindowButton.onClick.RemoveAllListeners();
         _addModuleButton.onClick.RemoveAllListeners();
     }
@@ -90,12 +90,14 @@ public class UIManager : MonoBehaviour
     {
         _drawButton.gameObject.SetActive(true);
         _addDoorButton.gameObject.SetActive(true);
+        _addWindowButton.gameObject.SetActive(true);
     }
 
     public void OnExitOrthoIdleState()
     {
         _drawButton.gameObject.SetActive(false);
         _addDoorButton.gameObject.SetActive(false);
+        _addWindowButton.gameObject.SetActive(false);
     }
 
     private void ToggleCamerStates()
@@ -105,14 +107,20 @@ public class UIManager : MonoBehaviour
 
     private void ShowModelSelectionUI()
     {
-        GameManager.Instance.GetSubStateManager().SetOrthoIdleState();
+        if (GameManager.Instance.GetCameraStateManager().GetCurrentState() is OrthographicState)
+            GameManager.Instance.GetSubStateManager().SetOrthoIdleState();
+        else
+            GameManager.Instance.GetSubStateManager().SetPerspIdleState();
         _modelSelectionUI.SetActive(true);
     }
 
     public void HideModelSelectionUI()
     {
         _modelSelectionUI.SetActive(false);
-        GameManager.Instance.GetSubStateManager().SetOrthoIdleState();
+        if (GameManager.Instance.GetCameraStateManager().GetCurrentState() is OrthographicState)
+            GameManager.Instance.GetSubStateManager().SetOrthoIdleState();
+        else
+            GameManager.Instance.GetSubStateManager().SetPerspIdleState();
     }
 
 }

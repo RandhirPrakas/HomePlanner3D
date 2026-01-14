@@ -93,7 +93,8 @@ public class ModelLoaderPanel : MonoBehaviour
     private void CloseModelSelectionUI()
     {
         _parent.SetActive(false);
-        GameManager.Instance.GetSubStateManager().SetOrthoIdleState();
+      //  GameManager.Instance.GetSubStateManager().SetOrthoIdleState();
+      GameManager.Instance.GetSubStateManager().SetPerspIdleState();
     }
 
     private void BackToModelCategory()

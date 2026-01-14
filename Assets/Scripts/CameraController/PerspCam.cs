@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 public class PerspCam : CameraManager
@@ -37,7 +38,7 @@ public class PerspCam : CameraManager
     {
         _cam = GetComponent<Camera>();
     }
-
+    
     private void Start()
     {
         _targetYaw = _yaw;
@@ -90,9 +91,7 @@ public class PerspCam : CameraManager
         _distance = Mathf.Lerp(_distance, _targetDistance, Time.deltaTime * _lerpSpeed);
 
         _pitch = Mathf.Clamp(_pitch, _minPitch, _maxPitch);
-
-
-
+        
         Quaternion rotation = Quaternion.Euler(_pitch, _yaw, 0f);
         Vector3 offset = rotation * new Vector3(0, 0, -_distance);
         _cam.transform.position = _target + offset;

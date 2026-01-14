@@ -6,6 +6,7 @@ public class PlaceObjectState : ICameraSubState
     private readonly OrthoCam _orthoCam;
     private readonly GameObject _prefabToPlace;
     private readonly PlaceableObject _placeableData;
+  
 
     // --- Preview Visuals ---
     private GameObject _placeholderInstance;
@@ -13,7 +14,8 @@ public class PlaceObjectState : ICameraSubState
     private Material _invalidPlacementMaterial;
     private Renderer[] _placeholderRenderers;
     private bool _isPlacementValid = false;
-
+    private WorldCanvasHandler _worldCanvasHandler = null;
+    
     /// <summary>
     /// Initializes the placement state with a specific object prefab.
     /// </summary>
@@ -34,6 +36,9 @@ public class PlaceObjectState : ICameraSubState
         // Load materials for visual feedback
         _validPlacementMaterial = Resources.Load<Material>("ProceduralMaterials/ValidPlacement");
         _invalidPlacementMaterial = Resources.Load<Material>("ProceduralMaterials/InvalidPlacement");
+
+        // Added World Canvas to Furniture
+        SetWorldUI();
     }
 
 
@@ -58,6 +63,9 @@ public class PlaceObjectState : ICameraSubState
         _placeholderRenderers = _placeholderInstance.GetComponentsInChildren<Renderer>();
         SetPlaceholderMaterial(_invalidPlacementMaterial);
         _isPlacementValid = false;
+        
+        // Attaching the UI with instantiated Furniture
+        _worldCanvasHandler._selectedObject = _placeholderInstance;
     }
 
     public void Exit()
@@ -93,7 +101,11 @@ public class PlaceObjectState : ICameraSubState
         {
             Debug.Log("Invalid placement position. Action cancelled.");
         }
-        GameManager.Instance.GetSubStateManager().SetOrthoIdleState();
+
+        if (GameManager.Instance.GetCameraStateManager().GetCurrentState() is OrthographicState)
+            GameManager.Instance.GetSubStateManager().SetOrthoIdleState();
+        else
+            GameManager.Instance.GetSubStateManager().SetPerspIdleState();
     }
 
     public void Update()
@@ -163,6 +175,22 @@ public class PlaceObjectState : ICameraSubState
         foreach (var renderer in _placeholderRenderers)
         {
             renderer.material = mat;
+        }
+    }
+
+    private void SetWorldUI()
+    {
+        
+        if (_worldCanvasHandler == null)
+        {
+            // Instantiate and parent under the wall point
+            _worldCanvasHandler = GameObject.Instantiate(
+                GameManager.Instance._uiManager.worldCanvasHandlerPlacedObject,
+                Vector3.zero,
+                Quaternion.identity,
+                null
+            );
+            _worldCanvasHandler.gameObject.name = "WorldCanvas";
         }
     }
 

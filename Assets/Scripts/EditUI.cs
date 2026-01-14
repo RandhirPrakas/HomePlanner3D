@@ -17,8 +17,7 @@ public class EditUI : MonoBehaviour
 
     public EditUIType CurrentUIType { get => _currentUIType; set => _currentUIType = value; }
 
-
-
+    
     private void Awake()
     {
         if (_deleteButton == null)
