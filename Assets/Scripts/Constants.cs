@@ -12,7 +12,7 @@ public static class Constants
     public static string TAG_PLACABLES = "Placables";
     public static string TAG_ROOM = "Room";
     public static string TAG_RESIZE_HANDLE = "ResizeHandle";
-
+    public static string TAG_WORLD_CANVAS = "WorldCanvas";
     #endregion
 
     #region Layers

@@ -22,6 +22,8 @@ public class EditObjectState : ICameraSubState
 
     // The new visualizer class handles all distance measurement logic
     private readonly MeasurementVisualizer _measurementVisualizer;
+     // For world Canvas on Placed object.
+    private WorldCanvasHandler _worldCanvasHandler;
 
     public GameObject SelectedObject
     {
@@ -63,6 +65,9 @@ public class EditObjectState : ICameraSubState
         // Initial update
         _measurementVisualizer.UpdateVisuals(_objectCollider);
 
+        // Setting up world canvas for edit it.
+        SetWorldCanvasUI();
+        
         Debug.Log("Entered Edit Object State");
     }
 
@@ -233,4 +238,22 @@ public class EditObjectState : ICameraSubState
     }
 
     public void Init(Vector3 worldPos, Vector2 screenPos) { }
+    
+    private void SetWorldCanvasUI()
+    {
+        if (_worldCanvasHandler == null)
+        {
+            // Instantiate and parent under the wall point
+            _worldCanvasHandler = GameObject.Instantiate(
+                GameManager.Instance._uiManager.worldCanvasHandlerPlacedObject,
+                Vector3.zero,
+                Quaternion.identity,
+                null
+            );
+            _worldCanvasHandler.gameObject.name = "WorldCanvas";
+        }
+
+        if (_selectedObject != null)
+            _worldCanvasHandler._selectedObject = _selectedObject;
+    }
 }

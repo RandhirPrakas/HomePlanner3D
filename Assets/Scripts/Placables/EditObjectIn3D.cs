@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using UnityEngine;
@@ -14,6 +15,7 @@ public class EditObjectIn3D : ICameraSubState
     private Vector3 _originalPosition;
     private Quaternion _originalRotation;
     private bool _isPlacementValid = false;
+    private bool _isObjectValidEdit = false;
     private int _floorLayerMask; // This must be an int for the bitmask
 
     private readonly Material _validPlacementMaterial;
@@ -22,6 +24,10 @@ public class EditObjectIn3D : ICameraSubState
 
     // The visualizer handles all distance measurement logic
     private readonly MeasurementVisualizer _measurementVisualizer;
+    private WorldCanvasHandler _worldCanvasHandler;
+    
+    // When Camera Ray Hit 3D placeable object then isAllowUpdate is false else true
+    private bool isAllowUpdate = true;
 
     public GameObject SelectedObject
     {
@@ -59,13 +65,20 @@ public class EditObjectIn3D : ICameraSubState
         SetFeedbackMaterial(_invalidPlacementMaterial);
 
         _floorLayerMask = 1 << LayerMask.NameToLayer(Constants.LAYER_FlOOR);
+        
+        // Setting up world canvas for edit it.
+        SetWorldCanvasUI();
     }
 
     public void Exit()
     {
-        if (_objectCollider != null) _objectCollider.enabled = true;
+        if (_objectCollider != null) 
+            _objectCollider.enabled = true;
+        
         RestoreOriginalMaterials();
-        //_measurementVisualizer.DestroyVisuals();
+        
+        // Setting isAllowUpdate to Reset
+        isAllowUpdate = true;
     }
 
     public void OnTouchStart(Vector3 worldPos, Vector2 screenPos) => UpdateObjectPosition(screenPos);
@@ -75,7 +88,7 @@ public class EditObjectIn3D : ICameraSubState
     {
         UpdateObjectPosition(screenPos);
 
-        if (!_isPlacementValid)
+        if (!_isPlacementValid && !_isObjectValidEdit)
         {
             SelectedObject.transform.SetPositionAndRotation(_originalPosition, _originalRotation);
         }
@@ -96,7 +109,7 @@ public class EditObjectIn3D : ICameraSubState
         {
             _orthoCam.Update();
         }
-        else if (_perspCam != null)
+        else if (_perspCam != null && isAllowUpdate)
         {
             _perspCam.UpdateCamera();
         }
@@ -131,9 +144,67 @@ public class EditObjectIn3D : ICameraSubState
             _perspCam.ZoomCamera(delta);
         }
     }
+    
+    public void ChangeSize(float factor)
+    {
+        if (SelectedObject == null) return;
+
+        _isObjectValidEdit = true;
+        SelectedObject.transform.localScale += SelectedObject.transform.localScale * factor;
+        GroundObject();
+    }
+
+
+    public void RotateObject(float amount)
+    {
+        if (SelectedObject == null)
+            return;
+        
+        _isObjectValidEdit = true;
+        SelectedObject.transform.Rotate(0, amount, 0);
+        GroundObject();
+    }
+
+    // Handling Cloning the object
+    public void CloneObject()
+    {
+        Collider col = SelectedObject.GetComponent<Collider>();
+
+        Vector3 offset = Vector3.negativeInfinity;
+        Vector3 newSpawnedPosition = Vector3.zero;
+        Vector3 directionToHit = SelectedObject.transform.right;
+        Vector3 newSpawnedScale = SelectedObject.transform.localScale;
+
+        // Create ray to check whether is place an object left or right 
+        Ray ray = new Ray(col.bounds.center, directionToHit);
+        if (Physics.Raycast(ray, out RaycastHit hitPoint, 10f, 1 << 6))
+        {
+            directionToHit = hitPoint.normal;
+            Debug.DrawRay(ray.origin, ray.direction, Color.red);
+            directionToHit.Normalize();
+        }
+
+        if (col != null)
+        {
+            col.enabled = true;
+            offset = directionToHit * (col.bounds.size.x + 0.5f);
+        }
+
+        newSpawnedPosition = col.bounds.center + offset;
+
+        col.enabled = false;
+        // Instantiating new prefab of this one.
+        GameManager.Instance.SetSubState(new PlaceObjectState(GameManager.Instance.GetOrthoCamera(), SelectedObject,
+            newSpawnedPosition, SelectedObject.transform.rotation, newSpawnedScale));
+    }
 
     private void UpdateObjectPosition(Vector2 screenPos)
     {
+        if(_placeableData.IsLock)
+            return;
+        // Hiding The WorldCanvasUI as soon as movement Start
+        _worldCanvasHandler?.Hide();
+        
         Ray ray = Camera.main.ScreenPointToRay(screenPos);
         bool foundValidSurface = TryPlaceOnValidSurface(ray);
 
@@ -166,12 +237,17 @@ public class EditObjectIn3D : ICameraSubState
 
     private void PlaceOnGround(RaycastHit hit)
     {
+        if(SelectedObject ==null)
+            return;
         SelectedObject.transform.position = hit.point + new Vector3(0, _placeableData.GroundOffset, 0);
-        SelectedObject.transform.rotation = Quaternion.identity;
+        //SelectedObject.transform.rotation = Quaternion.identity;
     }
 
     private void PlaceOnWall(RaycastHit hit)
     {
+        if(SelectedObject==null)
+            return;
+        
         SelectedObject.transform.position = hit.point;
         SelectedObject.transform.rotation = Quaternion.LookRotation(-hit.normal);
     }
@@ -206,9 +282,16 @@ public class EditObjectIn3D : ICameraSubState
         if (mat == null) return;
         foreach (var renderer in _originalMaterials.Keys)
         {
-            var newMaterials = new Material[renderer.materials.Length];
-            for (int i = 0; i < newMaterials.Length; i++) { newMaterials[i] = mat; }
-            renderer.materials = newMaterials;
+            if (renderer != null)
+            {
+                var newMaterials = new Material[renderer.materials.Length];
+                for (int i = 0; i < newMaterials.Length; i++)
+                {
+                    newMaterials[i] = mat;
+                }
+
+                renderer.materials = newMaterials;
+            }
         }
     }
 
@@ -229,23 +312,27 @@ public class EditObjectIn3D : ICameraSubState
         SelectedObject.transform.position = new Vector3(SelectedObject.transform.position.x, SelectedObject.transform.localScale.y / 2, SelectedObject.transform.position.z);
     }
 
-    private void ChangeSize(float factor)
+    private void SetWorldCanvasUI()
     {
-        if (SelectedObject == null) return;
+        _worldCanvasHandler = GameObject.FindGameObjectWithTag(Constants.TAG_WORLD_CANVAS)?.GetComponent<WorldCanvasHandler>();
+        if (_worldCanvasHandler == null)
+        {
+            // Instantiate and parent under the wall point
+            _worldCanvasHandler = GameObject.Instantiate(
+                GameManager.Instance._uiManager.worldCanvasHandlerPlacedObject,
+                Vector3.zero,
+                Quaternion.identity,
+                null
+            );
+            _worldCanvasHandler.gameObject.name = "WorldCanvas";
+        }
+        
+        if (_selectedObject != null)
+            _worldCanvasHandler._selectedObject = _selectedObject;
 
-        Debug.Log("Changing Size");
-        SelectedObject.transform.localScale += SelectedObject.transform.localScale * factor;
-        GroundObject();
-    }
+        // Initially During transition the isAllowUpdate must be false;
+        isAllowUpdate = false;
+        _worldCanvasHandler.Initialize(_selectedObject);
 
-
-    private void RotateObject(float amount)
-    {
-        if (SelectedObject == null)
-            return;
-
-        Debug.Log("Rotate this object");
-        SelectedObject.transform.Rotate(0, amount, 0);
-        GroundObject();
     }
 }

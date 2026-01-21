@@ -28,8 +28,7 @@ public class GameManager : MonoBehaviour
     {
         return _subStateManager.GetCurrentSubState();
     }
-
-
+    
     public SubStateManager GetSubStateManager()
     {
         return _subStateManager;
@@ -68,7 +67,6 @@ public class GameManager : MonoBehaviour
         {
             Destroy(gameObject);
         }
-        
     }
 
     private void Start()

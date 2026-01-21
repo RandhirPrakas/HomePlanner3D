@@ -14,7 +14,13 @@ public class PlaceObjectState : ICameraSubState
     private Material _invalidPlacementMaterial;
     private Renderer[] _placeholderRenderers;
     private bool _isPlacementValid = false;
-    private WorldCanvasHandler _worldCanvasHandler = null;
+  
+    // --- Separate Variables
+  //  private WorldCanvasHandler _worldCanvasHandler = null;
+    private Vector3 clonedPosition = Vector3.zero;
+    private Quaternion clonedRotation = Quaternion.identity;
+    private Vector3 clonedScale = Vector3.one;
+  
     
     /// <summary>
     /// Initializes the placement state with a specific object prefab.
@@ -38,7 +44,37 @@ public class PlaceObjectState : ICameraSubState
         _invalidPlacementMaterial = Resources.Load<Material>("ProceduralMaterials/InvalidPlacement");
 
         // Added World Canvas to Furniture
-        SetWorldUI();
+       // ANAND WROTE
+        SetWorldCanvasUI();
+    }
+    
+    /// <summary>
+    /// Initializes the placement state with a specific object prefab.
+    /// </summary>
+    /// <param name="orthoCam">The camera controller.</param>
+    /// <param name="prefab">The GameObject prefab to be placed.</param>
+    public PlaceObjectState(OrthoCam orthoCam, GameObject prefab , Vector3 position, Quaternion rotation, Vector3 scale)
+    {
+        if (prefab == null)
+        {
+            GameManager.Instance.GetSubStateManager().SetOrthoIdleState();
+            return;
+        }
+
+        _orthoCam = orthoCam;
+        _prefabToPlace = prefab;
+        _placeableData = prefab.GetComponent<PlaceableObject>();
+        clonedPosition = position;
+        clonedRotation = rotation;
+        clonedScale = scale;
+        
+        // Load materials for visual feedback
+        _validPlacementMaterial = Resources.Load<Material>("ProceduralMaterials/ValidPlacement");
+        _invalidPlacementMaterial = Resources.Load<Material>("ProceduralMaterials/InvalidPlacement");
+
+        // Added World Canvas to Furniture
+        // ANAND WROTE
+        SetWorldCanvasUI();
     }
 
 
@@ -55,6 +91,17 @@ public class PlaceObjectState : ICameraSubState
         _placeholderInstance.name = $"{_prefabToPlace.name}";
         _placeholderInstance.tag = Constants.TAG_PLACABLES;
 
+        // Setting Transform Position, Rotation & Scale
+        // -- Position
+        if (clonedPosition != Vector3.zero)
+            _placeholderInstance.transform.position = clonedPosition;
+        // -- Rotation
+        if (clonedRotation != Quaternion.identity)
+            _placeholderInstance.transform.rotation = clonedRotation;
+        // -- Scale
+        if (clonedScale != Vector3.one)
+            _placeholderInstance.transform.localScale = clonedScale;
+       
         foreach (var col in _placeholderInstance.GetComponentsInChildren<Collider>())
         {
             col.enabled = false;
@@ -63,9 +110,9 @@ public class PlaceObjectState : ICameraSubState
         _placeholderRenderers = _placeholderInstance.GetComponentsInChildren<Renderer>();
         SetPlaceholderMaterial(_invalidPlacementMaterial);
         _isPlacementValid = false;
-        
+
         // Attaching the UI with instantiated Furniture
-        _worldCanvasHandler._selectedObject = _placeholderInstance;
+       // _worldCanvasHandler._selectedObject = _placeholderInstance;
     }
 
     public void Exit()
@@ -74,11 +121,17 @@ public class PlaceObjectState : ICameraSubState
         if (_placeholderInstance != null)
         {
             GameObject.Destroy(_placeholderInstance);
+            //GameObject.Destroy(_worldCanvasHandler.gameObject);
         }
     }
 
     public void OnTouchStart(Vector3 worldPos, Vector2 screenPos)
     {
+        // if (_worldCanvasHandler == null)
+        // {
+        //     SetWorldCanvasUI();
+        // }
+
         UpdatePlaceholderPosition(screenPos);
     }
 
@@ -120,8 +173,14 @@ public class PlaceObjectState : ICameraSubState
 
     private void UpdatePlaceholderPosition(Vector2 screenPos)
     {
+        if(_placeableData.IsLock)
+            return;
+        
+        // Hiding The WorldCanvasUI as soon as movement Start
+      //  _worldCanvasHandler?.Hide();
+        
         if (_placeholderInstance == null) return;
-
+        
         Ray ray = Camera.main.ScreenPointToRay(screenPos);
 
         if (Physics.Raycast(ray, out RaycastHit hit, 1000f))
@@ -177,21 +236,27 @@ public class PlaceObjectState : ICameraSubState
             renderer.material = mat;
         }
     }
-
-    private void SetWorldUI()
+    /// <summary>
+    /// This method to initialze World Canvas for placed object. Called from PlacedObjectState.
+    /// </summary>
+    private void SetWorldCanvasUI()
     {
-        
-        if (_worldCanvasHandler == null)
-        {
-            // Instantiate and parent under the wall point
-            _worldCanvasHandler = GameObject.Instantiate(
-                GameManager.Instance._uiManager.worldCanvasHandlerPlacedObject,
-                Vector3.zero,
-                Quaternion.identity,
-                null
-            );
-            _worldCanvasHandler.gameObject.name = "WorldCanvas";
-        }
+        // if (_worldCanvasHandler == null)
+        // {
+        //     // Instantiate and parent under the wall point
+        //     _worldCanvasHandler = GameObject.Instantiate(
+        //         GameManager.Instance._uiManager.worldCanvasHandlerPlacedObject,
+        //         Vector3.zero,
+        //         Quaternion.identity,
+        //         null
+        //     );
+        //     _worldCanvasHandler.gameObject.name = "WorldCanvas";
+        // }
+        //
+        // if (_placeholderInstance != null)
+        // {
+        //     _worldCanvasHandler._selectedObject = _placeholderInstance;
+        // }
     }
 
     // This method is not part of the core logic but is required by the interface.

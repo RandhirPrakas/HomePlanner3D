@@ -12,6 +12,7 @@ TagManager:
   - Room
   - Placables
   - ResizeHandle
+  - WorldCanvas
   layers:
   - Default
   - TransparentFX
